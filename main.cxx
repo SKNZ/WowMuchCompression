@@ -10,6 +10,7 @@
  **/
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 using namespace std;
@@ -59,11 +60,11 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	if (argv[1] == "-c") //strcmp fdp
+	if (!strcmp(argv[1], "-c"))
 	{
 		compress(argv[2]);
 	}
-	else if (argv[1] == "-x")
+	else if (!strcmp(argv[1], "-x"))
 	{
 		extract(argv[2]);
 	}
