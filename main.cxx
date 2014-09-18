@@ -13,6 +13,9 @@
 #include <iostream>
 #include <vector>
 
+#define PIXEL_BLOCK_SIZE 		5
+#define PIXEL_MAX_COLOR_DELTA	5
+
 using namespace std;
 
 namespace
@@ -28,8 +31,15 @@ namespace
 	class CPixel
 	{
 	public:
-		CPixel(int r, int g, int b) : R(r), G(g), B(b) {}
-
+		CPixel(int r = 0, int g = 0, int b = 0) : R(r), G(g), B(b) {}
+		
+		bool compare (const CPixel & tar) const
+		{
+			return (tar.R <= R + PIXEL_MAX_COLOR_DELTA || tar.R >= R - PIXEL_MAX_COLOR_DELTA) &&
+					(tar.G <= G + PIXEL_MAX_COLOR_DELTA || tar.G >= G - PIXEL_MAX_COLOR_DELTA) &&
+					(tar.B <= B + PIXEL_MAX_COLOR_DELTA || tar.B >= B - PIXEL_MAX_COLOR_DELTA);
+		}
+		
 		int R, G, B;
 	};
 
@@ -37,11 +47,45 @@ namespace
 	{
 		cerr << "Usage: wmc -[c|x] fileName" << endl;
 	}
-
+	
+	bool comparePixelBlocks (const CFrame & pixelBlockRef, const CFrame & pixelBlockTar)
+	{
+		for (int x = 0; x < PIXEL_BLOCK_SIZE; ++x)
+		{
+			for (int y = 0; y < PIXEL_BLOCK_SIZE; ++y)
+			{
+				if (!pixelBlockRef [x][y].compare (pixelBlockTar [x][y]))
+					return false;
+			}
+		}
+		return true;
+	}
+	
 	void compress(char* fileName)
 	{
 		//Redondance avec vecteurs
-		CFrame Matrix;
+		for (int frameNumber = 0; frameNumber < Video.size () - 1; ++frameNumber)
+		{
+			CFrame & frameRef = Video [frameNumber];
+			CFrame pixelBlockRef;
+			pixelBlockRef.resize (PIXEL_BLOCK_SIZE);
+					
+			for (CPixelColumn Column : pixelBlockRef)
+			Column.resize (PIXEL_BLOCK_SIZE);
+					
+			CFrame pixelBlockTar (pixelBlockRef); //PixelBlockTarget
+			for (int x = 0; x < Video [0].size () - PIXEL_BLOCK_SIZE + 1; ++x)
+			{
+				for (int y = 0; y < Video [0][0].size () - PIXEL_BLOCK_SIZE + 1; ++y)
+				{
+					for (int xBlock = 0; x < pixelBlockRef.size (); ++x)
+						for (int yBlock = 0; y < pixelBlockRef.size (); ++y)
+							pixelBlockRef [xBlock][yBlock] = frameNumber [x][y];
+
+				}
+			}
+		}
+		
 		
 	}
 
@@ -69,7 +113,7 @@ int main(int argc, char** argv)
 		cerr << "The file couldn't be read." << endl;
 		return EXIT_FAILURE;
 	}
-	//
+	// Check video size and initialize CVideo Video
 	if (argv[1] == "-c") //strcmp fdp
 	{
 		compress(argv[2]);
