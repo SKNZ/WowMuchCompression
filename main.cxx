@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 
@@ -29,24 +30,36 @@ namespace
 	class CPixel
 	{
 	public:
-		CPixel(int r, int g, int b) : R(r), G(g), B(b) {}
+		CPixel (int r, int g, int b) : R(r), G(g), B(b) {}
 
 		int R, G, B;
 	};
 
-	void printErrorMessage()
+	void printErrorMessage ()
 	{
 		cerr << "Usage: wmc -[c|x] fileName" << endl;
 	}
 
-	void compress(char* fileName)
+	bool loadFile (char* fileName)
+	{
+		if (FILE *file = fopen (fileName, "r"))
+		{
+
+			fclose(file);
+			return true;
+		}
+
+		return false;
+	}
+
+	void compress()
 	{
 		//Redondance avec vecteurs
 		CFrame Matrix;
 		
 	}
 
-	void extract(char* fileName)
+	void extract()
 	{
 
 	}
@@ -60,28 +73,25 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	// File validity checks
-	if (true /* to be replaced with file validity checks*/)
+	if (loadFile(argv[2]))
 	{
-
+		if (!strcmp(argv[1], "-c"))
+		{
+			compress();
+		}
+		else if (!strcmp(argv[1], "-x"))
+		{
+			extract();
+		}
+		else
+		{
+			printErrorMessage();
+			return EXIT_FAILURE;
+		}
 	}
 	else
 	{
 		cerr << "The file couldn't be read." << endl;
-		return EXIT_FAILURE;
-	}
-
-	if (!strcmp(argv[1], "-c"))
-	{
-		compress(argv[2]);
-	}
-	else if (!strcmp(argv[1], "-x"))
-	{
-		extract(argv[2]);
-	}
-	else
-	{
-		printErrorMessage();
 		return EXIT_FAILURE;
 	}
 
