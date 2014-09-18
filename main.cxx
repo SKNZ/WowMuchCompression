@@ -12,15 +12,24 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
 namespace
 {
-	class Pixel
+	class CPixel;
+	
+	typedef vector <CPixel> CPixelColumn;
+	typedef vector <CPixelColumn> CFrame;
+	typedef vector <CFrame> CVideo;
+	
+	CVideo Video;
+	
+	class CPixel
 	{
 	public:
-		Pixel(int r, int g, int b) : R(r), G(g), B(b) { }
+		CPixel(int r, int g, int b) : R(r), G(g), B(b) {}
 
 		int R, G, B;
 	};
@@ -32,7 +41,9 @@ namespace
 
 	void compress(char* fileName)
 	{
-
+		//Redondance avec vecteurs
+		CFrame Matrix;
+		
 	}
 
 	void extract(char* fileName)
