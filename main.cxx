@@ -19,23 +19,14 @@ namespace
 	class Pixel
 	{
 	public:
-		Pixel(int r, int g, int b) : m_r(r), m_g(g), m_b(b) { }
+		Pixel(int r, int g, int b) : R(r), G(g), B(b) { }
 
-		int getR() { return m_r; }
-		int getG() { return m_g; }
-		int getB() { return m_b; }
-
-		void setR(int r) { m_r = r; }
-		void setG(int g) { m_g = g; }
-		void setB(int b) { m_b = b; }
-
-	private:
-		int m_r, m_g, m_b;
+		int R, G, B;
 	};
 
 	void printErrorMessage()
 	{
-		cerr << "Not enough arguments: wmc -[c|x] fileName" << endl;
+		cerr << "Usage: wmc -[c|x] fileName" << endl;
 	}
 
 	void compress(char* fileName)
