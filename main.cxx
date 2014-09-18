@@ -10,6 +10,8 @@
  **/
 
 #include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 
@@ -39,11 +41,10 @@ namespace
 					(tar.G <= G + PIXEL_MAX_COLOR_DELTA || tar.G >= G - PIXEL_MAX_COLOR_DELTA) &&
 					(tar.B <= B + PIXEL_MAX_COLOR_DELTA || tar.B >= B - PIXEL_MAX_COLOR_DELTA);
 		}
-		
 		int R, G, B;
 	};
 
-	void printErrorMessage()
+	void printErrorMessage ()
 	{
 		cerr << "Usage: wmc -[c|x] fileName" << endl;
 	}
@@ -60,8 +61,20 @@ namespace
 		}
 		return true;
 	}
-	
-	void compress(char* fileName)
+
+	bool loadFile (char* fileName)
+	{
+		if (FILE *file = fopen (fileName, "r"))
+		{
+
+			fclose(file);
+			return true;
+		}
+
+		return false;
+	}
+
+	void compress()
 	{
 		//Redondance avec vecteurs
 		for (int frameNumber = 0; frameNumber < Video.size () - 1; ++frameNumber)
@@ -89,7 +102,7 @@ namespace
 		
 	}
 
-	void extract(char* fileName)
+	void extract()
 	{
 
 	}
@@ -103,28 +116,25 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	// File validity checks
-	if (true /* to be replaced with file validity checks*/)
+	if (loadFile(argv[2]))
 	{
-
+		if (!strcmp(argv[1], "-c"))
+		{
+			compress();
+		}
+		else if (!strcmp(argv[1], "-x"))
+		{
+			extract();
+		}
+		else
+		{
+			printErrorMessage();
+			return EXIT_FAILURE;
+		}
 	}
 	else
 	{
 		cerr << "The file couldn't be read." << endl;
-		return EXIT_FAILURE;
-	}
-	// Check video size and initialize CVideo Video
-	if (argv[1] == "-c") //strcmp fdp
-	{
-		compress(argv[2]);
-	}
-	else if (argv[1] == "-x")
-	{
-		extract(argv[2]);
-	}
-	else
-	{
-		printErrorMessage();
 		return EXIT_FAILURE;
 	}
 
