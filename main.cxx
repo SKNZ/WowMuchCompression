@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	if (argv[1] == "-c")
+	if (argv[1] == "-c") //strcmp fdp
 	{
 		compress(argv[2]);
 	}
