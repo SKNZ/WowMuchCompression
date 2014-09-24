@@ -1,6 +1,6 @@
 http://deptinfo.unice.fr/twiki/pub/Linfo/PlanningDesSoutenances20032004/Cahier.pdf
 http://stackoverflow.com/questions/2045541/discrete-wavelet-transform-integer-daub-5-3-lifting-issue
 http://www.lokminglui.com/dct.pdf
- 
+ dct copypaste: http://forums.anandtech.com/showthread.php?t=2029136
 /* Pour amphi: Il existe deux genres de compressions: la compression sans perte, par exemple de fichiers exécutables, qui permet de récupérer après décompression le fichier en intégralité, cela permet de réduire le transfert de données par réseau et de récupérer tout de même le fichier voulu; et la compression avec perte, principalement d'images ou de vidéos: en effet, si la compression avec perte d'un fichier exécutable n'a pas de sens (le fichier ne fonctionnerait alors plus du tout), la compression d'une image permet de gagner de la place sur le disque dur et pour le réseau et d'avoir quand même une image de qualité décente. L'exemple le plus parlant est celui du format jpg qui, utilisé principalement pour les photos, permet de gagner plus de jusqu'à près de 75% sur le poids total de l'image; la compression de vidéo utilise le principe de la redondance, */ 
 

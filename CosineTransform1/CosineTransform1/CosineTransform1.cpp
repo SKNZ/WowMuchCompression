@@ -58,13 +58,10 @@ namespace
 #pragma pack()
 
 #define N 8
-	const double inv16 = 1.0 / 16.0;
-	const double SQRT2o2 = 1.414213562373095048801688724209 * 0.5;
 	double alpha(int i)
 	{
-		if (i == 0)
-			return SQRT2o2 * 0.5;
-		return 0.5;
+		static const double invSqrt2 = 1 / sqrt(2.0);
+		return !i ? invSqrt2 : 0;
 	}
 
 	void Compress(Pixel** pixelArray, int height, int width)
@@ -82,6 +79,15 @@ namespace
 			for (int y = 0; y < N; ++y)
 				pixelBlock[x][y] = pixelArray[x][y];
 
+		for (int y = 0; y < N; ++y)
+		{
+			for (int x = 0; x < N; ++x)
+				cout << (int)pixelBlock[x][y].R << " ";
+			cout << endl;
+		}
+		cout << endl;
+
+
 		double** dctR = new double*[N];
 		for (int x = 0; x < N; ++x)
 			dctR[x] = new double[N];
@@ -95,7 +101,7 @@ namespace
 				{
 					for (int v = 0; v < N; ++v)
 					{
-						dctR[x][y] += alpha(u) * alpha(v) * pixelBlock[u][v].R * cosinay[u][x] * cosinay[v][y];
+						dctR[x][y] += alpha(u) * alpha(v) * (pixelBlock[u][v].R - 127) * cosinay[u][x] * cosinay[v][y];
 					}
 				}
 			}
@@ -107,7 +113,6 @@ namespace
 				cout << dctR[x][y] << " ";
 			cout << endl;
 		}
-		//
 
 		////ofstream file("debug.txt", ios::out | ios::trunc);
 		////file.precision(3);
