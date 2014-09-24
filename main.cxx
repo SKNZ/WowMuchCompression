@@ -30,7 +30,7 @@ namespace
 	typedef vector <CPixelColumn> CFrame;
 	typedef vector <CFrame> CVideo;
 	
-	map <int, vector <CTranslation>> Map;
+	map <int, vector <CTranslation>> TranslationsPerFrame;
 	CVideo Video;
 	
 	class CPixel
@@ -46,12 +46,21 @@ namespace
 					(tar.G <= G + PIXEL_MAX_COLOR_DELTA || tar.G >= G - PIXEL_MAX_COLOR_DELTA) &&
 					(tar.B <= B + PIXEL_MAX_COLOR_DELTA || tar.B >= B - PIXEL_MAX_COLOR_DELTA);
 		}
+		void empty ()
+		{
+			R = G = B = -1;
+		}
+		bool isEmpty () const
+		{
+			return R == G && G == B && -1 == B;
+		}
 		int R, G, B;
 	};
 	
 	class CTranslation
 	{
 	public:
+		CTranslation (int x1, int y1, int x2, int y2):X1(x1), Y1(y1), X2(x2), Y2(y2) {}
 		int X1, Y1, X2, Y2; //X1,Y1 top left corner of block on current frame. X2, Y2 top left corner of block on current frame +1
 	};
 
@@ -69,7 +78,7 @@ namespace
 			for (int y = 0; y < PIXEL_BLOCK_SIZE; ++y)
 			{
 				// if even only two pixels of same positions in the 2 matrix are more than X% different, return false
-				if (!pixelBlockRef [x][y].compare (pixelBlockTar [x][y]))
+				if (!pixelBlockRef [x][y].compare (pixelBlockTar [x][y]) || pixelBlockTar [x][y].isEmpty ())
 					return false;
 			}
 		}
@@ -87,7 +96,23 @@ namespace
 
 		return false;
 	}
-
+	CFrame fillPixelBlock (const CFrame & frame, unsigned xOrigin, unsigned yOrigin)
+	{
+		CFrame pixelBlock;
+		pixelBlock.resize (PIXEL_BLOCK_SIZE);
+		for (CPixelColumn Column : pixelBlock)
+			pixelBlock.resize (PIXEL_BLOCK_SIZE);
+		for (unsigned x = 0; x < PIXEL_BLOCK_SIZE; ++x)
+			for (unsigned y = 0; y < PIXEL_BLOCK_SIZE; ++y)
+				pixelBlock [x][y] = frame [xOrigin + x][yOrigin + y];
+		return pixelBlock;
+	}
+	void emptyPixelBlock (CFrame & frame, unsigned xOrigin, unsigned yOrigin)
+	{
+		for (unsigned x = xOrigin; x < xOrigin + PIXEL_BLOCK_SIZE; ++x)
+			for (unsigned y = yOrigin; y < yOrigin + PIXEL_BLOCK_SIZE; ++y)
+				frame [x][y].empty ();
+	}
 	void compress()
 	{
 		// redundancy
@@ -102,23 +127,24 @@ namespace
 				Column.resize (PIXEL_BLOCK_SIZE);
 					
 			CFrame pixelBlockTar (pixelBlockRef); //PixelBlockTarget
-			// fill pixelBlockRef with pixels from reference frame
-			// for each pixel of the frame
-			for (unsigned x = 0; x < Video [0].size () /*width of a frame*/ - PIXEL_BLOCK_SIZE + 1; ++x)
-				for (unsigned y = 0; y < Video [0][0].size () /*height of a frame*/ - PIXEL_BLOCK_SIZE + 1; ++y)
-					// for each pixel of the block
-					for (unsigned xBlock = 0; x < pixelBlockRef.size (); ++x)
-						for (unsigned yBlock = 0; y < pixelBlockRef.size (); ++y)
-							pixelBlockRef [xBlock][yBlock] = frameRef[x + xBlock][y + yBlock];// fill the block
-			// fill pixelBlockTar with pixels from target frame
-			for (unsigned x = 0; x < Video [0].size () /*width of a frame*/ - PIXEL_BLOCK_SIZE + 1; ++x)
-				for (unsigned y = 0; y < Video [0][0].size () /*height of a frame*/ - PIXEL_BLOCK_SIZE + 1; ++y)
-					for (unsigned xBlock = 0; x < pixelBlockRef.size (); ++x)
-						for (unsigned yBlock = 0; y < pixelBlockRef.size (); ++y)
-							pixelBlockTar [xBlock][yBlock] = frameTar [x + xBlock][y + yBlock];// fill the block
-			
+
+			for (unsigned xRef = 0; xRef < Video [0].size () - PIXEL_BLOCK_SIZE + 1; ++xRef)
+				for (unsigned yRef = 0; yRef < Video [0][0].size () - PIXEL_BLOCK_SIZE + 1; ++yRef)
+				{
+					pixelBlockRef = fillPixelBlock (Video [frameNumber], xRef, yRef);
+					for (unsigned xTar = 0; xTar < Video [0].size () - PIXEL_BLOCK_SIZE + 1; ++xTar)
+						for (unsigned yTar = 0; yTar < Video [0].size () - PIXEL_BLOCK_SIZE + 1; ++yTar)
+						{
+							pixelBlockTar = fillPixelBlock (Video [frameNumber + 1], xTar, yTar);
+							if (comparePixelBlocks (pixelBlockRef, pixelBlockTar))
+							{
+								TranslationsPerFrame [frameNumber].push_back (CTranslation (xRef, yRef, xTar, yTar));
+								emptyPixelBlock (Video [frameNumber + 1], xTar, yTar - 4);
+							}
+						}
+				}
+
 		}
-		
 		
 	}
 
