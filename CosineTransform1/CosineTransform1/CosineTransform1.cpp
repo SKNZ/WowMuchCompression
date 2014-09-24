@@ -58,100 +58,142 @@ namespace
 #pragma pack()
 
 #define N 8
+	const double inv16 = 1.0 / 16.0;
+	const double SQRT2o2 = 1.414213562373095048801688724209 * 0.5;
+	double alpha(int i)
+	{
+		if (i == 0)
+			return SQRT2o2 * 0.5;
+		return 0.5;
+	}
 
 	void Compress(Pixel** pixelArray, int height, int width)
 	{
-		/*ofstream file("debug.txt", ios::out | ios::trunc);
-		file.precision(3);
-		cout.precision(3);*/
-		cout << std::fixed;
-		double T[N][N];
+		double cosinay[N][N];
+		for (int y = 0; y < 8; y++)
+			for (int x = 0; x < 8; x++)
+				cosinay[x][y] = cos(M_PI * x * (2.0 * y + 1) * inv16);
 
-		for (int i = 0; i < N; ++i)
+		Pixel** pixelBlock = new Pixel*[N];
+		for (int x = 0; x < N; ++x)
+			pixelBlock[x] = new Pixel[N];
+
+		for (int x = 0; x < N; ++x)
+			for (int y = 0; y < N; ++y)
+				pixelBlock[x][y] = pixelArray[x][y];
+
+		double** dctR = new double*[N];
+		for (int x = 0; x < N; ++x)
+			dctR[x] = new double[N];
+
+		for (int y = 0; y < N; ++y)
 		{
-			for (int j = 0; j < N; ++j)
+			for (int x = 0; x < N; ++x)
 			{
-				if (i == 0)
-					T[i][j] = 1 / sqrt(N);
-				else
-					T[i][j] = sqrt(2.0 / N) * cos((((2 * j) + 1) * i * M_PI) / (2 * N));
+				dctR[x][y] = 0;
+				for (int u = 0; u < N; ++u)
+				{
+					for (int v = 0; v < N; ++v)
+					{
+						dctR[x][y] += alpha(u) * alpha(v) * pixelBlock[u][v].R * cosinay[u][x] * cosinay[v][y];
+					}
+				}
 			}
 		}
 
-		double** cofactorT = new double*[N];
-		for (int i = 0; i < N; ++i)
-			cofactorT[i] = new double[N];
-
-		double** Tptr = new double*[N];
-		for (int i = 0; i < N; ++i)
-			Tptr[i] = new double[N];
-
-		for (int i = 0; i < N; ++i)
-			for (int j = 0; j < N; ++j)
-				Tptr[i][j] = T[i][j];
-
-		double det = Determinant(Tptr, N);
-		CoFactor(Tptr, N, cofactorT);
-		Transpose(cofactorT, N);
-
-		for (int i = 0; i < N; ++i)
-			for (int j = 0; j < N; ++j)
-				cofactorT[i][j] /= det;
-
-		for (int currH = 0; currH < width - N - 1; currH += N)
+		for (int y = 0; y < N; ++y)
 		{
-			for (int currW = 0; currW < height - N - 1; currW += N)
-			{
-
-				int16_t M[N][N][3];
-				for (int i = 0; i < N; ++i)
-				{
-					for (int j = 0; j < N; ++j)
-					{
-						M[i][j][0] = pixelArray[currH + i][currW + j].R - 128;
-						M[i][j][1] = pixelArray[currH + i][currW + j].G - 128;
-						M[i][j][2] = pixelArray[currH + i][currW + j].B - 128;
-					}
-				}
-				 
-				double TM[N][N][3];
-				for (int i = 0; i < N; ++i)
-				{
-					for (int j = 0; j < N; ++j)
-					{
-						for (int k = 0; k < N; ++k)
-						{
-							TM[i][j][0] += T[i][k] * M[k][j][0];
-							TM[i][j][1] += T[i][k] * M[k][j][1];
-							TM[i][j][2] += T[i][k] * M[k][j][2];
-						}
-					}
-				}
-
-				double dct[N][N][3];
-				for (int i = 0; i < N; ++i)
-				{
-					for (int j = 0; j < N; ++j)
-					{
-						for (int k = 0; k < N; ++k)
-						{
-							dct[i][j][0] += TM[i][k][0] * cofactorT[k][j];
-							dct[i][j][1] += TM[i][k][1] * cofactorT[k][j];
-							dct[i][j][2] += TM[i][k][2] * cofactorT[k][j];
-						}
-					}
-				}
-				/*for (int i = 0; i < N; ++i)
-				{
-					for (int j = 0; j < N; ++j)
-						file << "(" << setw(10) << dct[i][j][0] << "," << setw(10) << dct[i][j][1] << "," << setw(10) << dct[i][j][2] << ")";
-					file << endl;
-				}
-				file << "=========================================== " << currW << "x" << currH << endl << endl;*/
-			}
+			for (int x = 0; x < N; ++x)
+				cout << dctR[x][y] << " ";
+			cout << endl;
 		}
+		//
 
-		cout << endl << endl;
+		////ofstream file("debug.txt", ios::out | ios::trunc);
+		////file.precision(3);
+		////cout.precision(3);
+		//cout << std::fixed;
+		//double T[N][N];
+
+		//for (int i = 0; i < N; ++i)
+		//{
+		//	for (int j = 0; j < N; ++j)
+		//	{
+		//		if (i == 0)
+		//			T[i][j] = 1 / sqrt(N);
+		//		else
+		//			T[i][j] = sqrt(2.0 / N) * cos((((2 * j) + 1) * i * M_PI) / (2 * N));
+		//	}
+		//}
+
+		//double** cofactorT = new double*[N];
+		//for (int i = 0; i < N; ++i)
+		//	cofactorT[i] = new double[N];
+
+		//double** Tptr = new double*[N];
+		//for (int i = 0; i < N; ++i)
+		//	Tptr[i] = new double[N];
+
+		//for (int i = 0; i < N; ++i)
+		//	for (int j = 0; j < N; ++j)
+		//		Tptr[i][j] = T[i][j];
+
+		//double det = Determinant(Tptr, N);
+		//CoFactor(Tptr, N, cofactorT);
+		//Transpose(cofactorT, N);
+
+		//for (int i = 0; i < N; ++i)
+		//	for (int j = 0; j < N; ++j)
+		//		cofactorT[i][j] /= det;
+
+		//for (int currH = 0; currH < width - N - 1; currH += N)
+		//{
+		//	for (int currW = 0; currW < height - N - 1; currW += N)
+		//	{
+
+		//		int16_t M[N][N][3];
+		//		for (int i = 0; i < N; ++i)
+		//		{
+		//			for (int j = 0; j < N; ++j)
+		//			{
+		//				M[i][j][0] = pixelArray[currH + i][currW + j].R - 128;
+		//				M[i][j][1] = pixelArray[currH + i][currW + j].G - 128;
+		//				M[i][j][2] = pixelArray[currH + i][currW + j].B - 128;
+		//			}
+		//		}
+		//		 
+		//		double TM[N][N][3];
+		//		for (int i = 0; i < N; ++i)
+		//		{
+		//			for (int j = 0; j < N; ++j)
+		//			{
+		//				for (int k = 0; k < N; ++k)
+		//				{
+		//					TM[i][j][0] += T[i][k] * M[k][j][0];
+		//					TM[i][j][1] += T[i][k] * M[k][j][1];
+		//					TM[i][j][2] += T[i][k] * M[k][j][2];
+		//				}
+		//			}
+		//		}
+
+		//		double dct[N][N][3];
+		//		for (int i = 0; i < N; ++i)
+		//		{
+		//			for (int j = 0; j < N; ++j)
+		//			{
+		//				for (int k = 0; k < N; ++k)
+		//				{
+		//					dct[i][j][0] += TM[i][k][0] * cofactorT[k][j];
+		//					dct[i][j][1] += TM[i][k][1] * cofactorT[k][j];
+		//					dct[i][j][2] += TM[i][k][2] * cofactorT[k][j];
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+
+		//cout << endl << endl;
+		
 	}
 
 	void Extract(Pixel** pixelArray, int height, int width)
