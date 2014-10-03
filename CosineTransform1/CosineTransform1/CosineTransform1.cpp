@@ -54,50 +54,207 @@ namespace
 	struct Pixel
 	{
 		uint8_t B, G, R;
+
+		float Y()
+		{
+			return 0.299 * R + 0.587 * G + 0.114 * B;
+		}
+
+		float Cb()
+		{
+			return -0.1687 * R - 0.3313 * G + 0.5 * B + 128;
+		}
+
+		float Cr()
+		{
+			return 0.5 * R - 0.4187 * G - 0.0813 * B + 128;
+		}
+
+		void setR(uint8_t Y, uint8_t Cr)
+		{
+			R = Y + 1.402 * (Cr - 128);
+		}
+
+		void setG(uint8_t Y, uint8_t Cb, uint8_t Cr)
+		{
+			G = Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128);
+		}
+
+		void setB(uint8_t Y, uint8_t Cb)
+		{
+			B = Y + 1.772 * (Cb - 128);
+		}
 	};
 #pragma pack()
 
 #define N 8
-	
-	void doDCT(float pixelBlock[N][N], float dct[N][N])
+	double alpha(int u)
 	{
+		return u == 0 ? 1.f / sqrt(2.f) : 1.f;
+	}
+
+	void doDCT(double pixelBlock[N][N], double dct[N][N])
+	{
+		for (int u = 0; u < N; ++u)
+			for (int v = 0; v < N; ++v)
+				pixelBlock[u][v] -= 128;
+
+		for (int u = 0; u < N; ++u)
+		{
+			for (int v = 0; v < N; ++v)
+			{
+				for (int up = 0; up < N; ++up)
+				{
+					for (int vp = 0; vp < N; ++vp)
+					{
+						dct[u][v] += pixelBlock[up][vp] * cos(((2.f * up + 1.f) * u * M_PI) / 16.f) * cos(((2.f * vp + 1.f) * v * M_PI) / 16.f);
+					}
+				}
+
+				dct[u][v] *= 0.25f * alpha(u) * alpha(v);
+			}
+		}
+		
+		cout.precision(5);/*
+		for (int up = 0; up < N; ++up)
+		{
+			for (int vp = 0; vp < N; ++vp)
+				cout << setw(10) << dct[up][vp];
+
+			cout << endl;
+		}*/
+	}
+
+	void undoDCT(double pixelBlock[N][N], double dct[N][N])
+	{
+		for (int u = 0; u < N; ++u)
+		{
+			for (int v = 0; v < N; ++v)
+			{
+				for (int up = 0; up < N; ++up)
+				{
+					for (int vp = 0; vp < N; ++vp)
+					{
+						pixelBlock[u][v] += alpha(up) * alpha(vp) * dct[up][vp] * cos(((2.f * u + 1.f) * up * M_PI) / 16.f) * cos(((2.f * v + 1.f) * vp * M_PI) / 16.f);
+					}
+				}
+
+				pixelBlock[u][v] *= 0.25f;
+			}
+		}
+
+		for (int u = 0; u < N; ++u)
+			for (int v = 0; v < N; ++v)
+				pixelBlock[u][v] += 128;
+
+		for (int up = 0; up < N; ++up)
+		{
+			for (int vp = 0; vp < N; ++vp)
+				/*cout << setw(10) << pixelBlock[up][vp];*/
+
+			cout << endl;
+		}
 
 	}
 
 	void Compress(Pixel** pixelArray, int height, int width)
 	{
-		for (int k = 0; k < height - 8; k += 8)
+		bool stop = false;
+		for (int u = 0; u < width - 8 && !stop; u += 8)
 		{
-			for (int n = 0; n < height - 8; n += 8)
+			for (int v = 0; v < height - 8; v += 8)
 			{
-				float pixelBlock[N][N];
-				for (int kp = 0; kp < N; ++kp) // kp = k'
-					for (int np = 0; np < N; ++n) // np = n'
-						pixelBlock[kp][np] = pixelArray[k + kp][n + np].R; // TOUT BI RIPLASSAIDE OUIZ IUVE LUMINENSSE
+				double pixelBlock[N][N];
+				for (int up = 0; up < N; ++up) // kp = k'
+					for (int vp = 0; vp < N; ++vp) // np = n'
+						pixelBlock[up][vp] = pixelArray[u + up][v + vp].Y(); // TOUT BI RIPLASSAIDE OUIZ IUVE LUMINENSSE
 
-				float dct[N][N];
-				for (int kp = 0; kp < N; ++kp)
-					for (int np = 0; np < N; ++np)
-						dct[kp][np] = 0.f;
+				/*pixelBlock[0][0] = 52;
+				pixelBlock[0][1] = 55;
+				pixelBlock[0][2] = 61;
+				pixelBlock[0][3] = 66;
+				pixelBlock[0][4] = 70;
+				pixelBlock[0][5] = 61;
+				pixelBlock[0][6] = 64;
+				pixelBlock[0][7] = 73;
+				pixelBlock[1][0] = 63;
+				pixelBlock[1][1] = 59;
+				pixelBlock[1][2] = 55;
+				pixelBlock[1][3] = 90;
+				pixelBlock[1][4] = 109;
+				pixelBlock[1][5] = 85;
+				pixelBlock[1][6] = 69;
+				pixelBlock[1][7] = 72;
+				pixelBlock[2][0] = 62;
+				pixelBlock[2][1] = 59;
+				pixelBlock[2][2] = 68;
+				pixelBlock[2][3] = 113;
+				pixelBlock[2][4] = 144;
+				pixelBlock[2][5] = 104;
+				pixelBlock[2][6] = 66;
+				pixelBlock[2][7] = 73;
+				pixelBlock[3][0] = 63;
+				pixelBlock[3][1] = 58;
+				pixelBlock[3][2] = 71;
+				pixelBlock[3][3] = 122;
+				pixelBlock[3][4] = 154;
+				pixelBlock[3][5] = 106;
+				pixelBlock[3][6] = 70;
+				pixelBlock[3][7] = 69;
+				pixelBlock[4][0] = 67;
+				pixelBlock[4][1] = 61;
+				pixelBlock[4][2] = 68;
+				pixelBlock[4][3] = 104;
+				pixelBlock[4][4] = 126;
+				pixelBlock[4][5] = 88;
+				pixelBlock[4][6] = 68;
+				pixelBlock[4][7] = 70;
+				pixelBlock[5][0] = 79;
+				pixelBlock[5][1] = 65;
+				pixelBlock[5][2] = 60;
+				pixelBlock[5][3] = 70;
+				pixelBlock[5][4] = 77;
+				pixelBlock[5][5] = 68;
+				pixelBlock[5][6] = 58;
+				pixelBlock[5][7] = 75;
+				pixelBlock[6][0] = 85;
+				pixelBlock[6][1] = 71;
+				pixelBlock[6][2] = 64;
+				pixelBlock[6][3] = 59;
+				pixelBlock[6][4] = 55;
+				pixelBlock[6][5] = 61;
+				pixelBlock[6][6] = 65;
+				pixelBlock[6][7] = 83;
+				pixelBlock[7][0] = 87;
+				pixelBlock[7][1] = 79;
+				pixelBlock[7][2] = 69;
+				pixelBlock[7][3] = 68;
+				pixelBlock[7][4] = 65;
+				pixelBlock[7][5] = 76;
+				pixelBlock[7][6] = 78;
+				pixelBlock[7][7] = 94;*/
+
+				double dct[N][N];
+				for (int up = 0; up < N; ++up)
+					for (int vp = 0; vp < N; ++vp)
+						dct[up][vp] = 0.f;
 
 				doDCT(pixelBlock, dct);
-
-				cout.precision(3);
-				float dct[N][N];
-				for (int kp = 0; kp < N; ++kp)
-				{
-					for (int np = 0; np < N; ++np)
-						cout << dct[kp][np] << "";
-
-					cout << endl;
-				}
-				break; // LOL C PR LAI TAISTE FODRA LE LEVER
+				undoDCT(pixelBlock, dct);
+				for (int up = 0; up < N; ++up) // kp = k'
+					for (int vp = 0; vp < N; ++vp) // np = n'
+					{
+						pixelArray[u + up][v + vp].setR(pixelBlock[up][vp], pixelArray[u + up][v + vp].Cr());
+						pixelArray[u + up][v + vp].setG(pixelBlock[up][vp], pixelArray[u + up][v + vp].Cb(), pixelArray[u + up][v + vp].Cr());
+						pixelArray[u + up][v + vp].setB(pixelBlock[up][vp], pixelArray[u + up][v + vp].Cb());
+					}
 			}
 		}
 	}
 
 	void Extract(Pixel** pixelArray, int height, int width)
 	{
+
 	}
 }
 
