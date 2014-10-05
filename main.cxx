@@ -13,8 +13,10 @@
 #include <cstring>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
+#include <cstdint>
 
 #define PIXEL_BLOCK_SIZE 		5
 #define PIXEL_MAX_COLOR_DELTA	5
@@ -23,14 +25,53 @@ using namespace std;
 
 namespace
 {
+#pragma pack(2)
+	struct BMPFileHeader
+	{
+		uint16_t Signature;
+		uint32_t FileSize;
+		uint16_t Reserved1;
+		uint16_t Reserved2;
+		uint32_t PixelArrayOffset;
+	};
+
+	struct BMPV5Header
+	{
+		uint32_t DIBHeaderSize;
+		int32_t ImageWidth;
+		int32_t ImageHeight;
+		uint16_t Planes;
+		uint16_t BitsPerPixels;
+		uint32_t Compression;
+		uint32_t ImageSize;
+		int32_t XPixelsPerMeter;
+		int32_t YPixelsPerMeter;
+		int32_t ColorsInColorsTable;
+		int32_t ImportantColorCount;
+		int32_t RedChannelBitmask;
+		int32_t GreenChannelBitmask;
+		int32_t BlueChannelBitmask;
+		int32_t AlphaChannelBitmask;
+		int32_t ColorSpaceType;
+		char ColorSpaceEndpoints[36];
+		int32_t RedChannelGamma;
+		int32_t GreenChannelGamma;
+		int32_t BlueChannelGamma;
+		int32_t Intent;
+		int32_t ICCProfileData;
+		int32_t ICCProfileSpace;
+		int32_t Reserved;
+	};
 	class CPixel;
 	class CTranslation;
 	
 	typedef vector <CPixel> CPixelColumn;
 	typedef vector <CPixelColumn> CFrame;
 	typedef vector <CFrame> CVideo;
-	
-	map <int, vector <CTranslation>> TranslationsPerFrame;
+
+	map <int, vector <CTranslation> > TranslationsPerFrame;
+	map <int, BMPFileHeader fileHeader> HeaderBMP;
+	map <int, BMPV5Header bmpHeader> HeaderBMPV5;
 	CVideo Video;
 	
 	class CPixel
@@ -115,6 +156,7 @@ namespace
 	}
 	void compress()
 	{
+		//
 		// redundancy
 		for (unsigned frameNumber = 0; frameNumber < Video.size () - 1; ++frameNumber)// every frame of the video
 		{
@@ -145,18 +187,75 @@ namespace
 				}
 
 		}
-		
+
 	}
 
 	void extract()
 	{
 
 	}
+
+	CFrame importFrame (string framePath, unsigned frameNumber)
+	{
+		ifstream originalFile(framePath, ios::binary | ios::in);
+
+		if (!originalFile)
+			exit(0);
+
+		BMPFileHeader fileHeader;
+		originalFile.read(reinterpret_cast<char*>(&fileHeader), sizeof(BMPFileHeader));
+
+		BMPV5Header bmpHeader;
+		originalFile.read(reinterpret_cast<char*>(&bmpHeader), sizeof(BMPV5Header));
+
+		int rowSize = 4 * (((bmpHeader.BitsPerPixels * bmpHeader.ImageWidth) + 31) / 32);
+
+		CFrame pixelArray;
+		const int paddingBitsCount = rowSize - (bmpHeader.ImageWidth * 3 * sizeof(uint8_t));
+
+		for (int y = 0; y < bmpHeader.ImageHeight; ++y)
+		{
+			for (int x = 0; x < bmpHeader.ImageWidth; ++x)
+
+			originalFile.seekg(static_cast<int>(originalFile.tellg()) + paddingBitsCount);
+		}
+
+		originalFile.close();
+		return pixelArray;
+	}
+	bool exportFrame (CFrame frame, string pathFrame)
+	{
+		ofstream extractedFile(KExtractedFile, ios::binary | ios::out | ios::trunc);
+
+		if (!extractedFile)
+			return EXIT_FAILURE;
+
+		extractedFile.write(reinterpret_cast<char*>(&fileHeader), sizeof(BMPFileHeader));
+		extractedFile.write(reinterpret_cast<char*>(&bmpHeader), sizeof(BMPV5Header));
+
+
+		for (int y = 0; y < bmpHeader.ImageHeight; ++y)
+		{
+			for (int x = 0; x < bmpHeader.ImageWidth; ++x)
+				extractedFile.write(reinterpret_cast<char*>(&pixelArray[x][y]), sizeof(Pixel));
+
+			for (int i = 0; i < paddingBitsCount; ++i)
+				extractedFile << 0;
+		}
+
+		extractedFile.close();
+		return 0;
+	}
 }
 
+	void test () //
+	{
+
+	}
 int main(int argc, char** argv)
 {
-	if (argc < 3)
+	test ();
+	/*if (argc < 3)
 	{
 		printErrorMessage();
 		return EXIT_FAILURE;
@@ -183,7 +282,7 @@ int main(int argc, char** argv)
 		cerr << "The file couldn't be read." << endl;
 		return EXIT_FAILURE;
 	}
-
+	*/
 	return EXIT_SUCCESS;
 }
 
