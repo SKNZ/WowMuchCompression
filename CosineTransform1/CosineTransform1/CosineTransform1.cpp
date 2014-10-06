@@ -90,6 +90,7 @@ namespace
 #define N 8
 
 	using Eigen::Matrix;
+	using Eigen::MatrixXd;
 
 	const double KInverseOfSQRTOf2 = 1. / sqrt(2.);
 	const double KSQRTOf2N = sqrt(2. / N);
@@ -100,14 +101,8 @@ namespace
 	{
 		MatrixN pixelMatrix, dctMatrix;
 		for (int k = 0; k < N; ++k)
-		{
 			for (int n = 0; n < N; ++n)
-			{
 				pixelMatrix(k, n) = pixelBlock[k][n] - 128;
-				cout << pixelBlock[k][n] << " ";
-			}
-			cout << endl;
-		}
 
 		for (int k = 0; k < N; ++k)
 		{
@@ -120,30 +115,11 @@ namespace
 		dctMatrix.row(0) *= KInverseOfSQRTOf2; // Following to the JPEG standard, the first line is multiplied by 1/sqrt(2)
 		dctMatrix *= KSQRTOf2N;
 
-		cout << dctMatrix << endl << endl;
+		//cout << dctMatrix << endl << endl;
 
 		pixelMatrix = dctMatrix * pixelMatrix * dctMatrix.transpose();
 
-		//MatrixN iDCTMatrix;
-		//for (int k = 0; k < N; ++k)
-		//{
-		//	iDCTMatrix(k, 0) = .5;
-		//	for (int n = 1; n < N; ++n)
-		//	{
-		//		iDCTMatrix(k, n) = cos((M_PI * n * (k + .5)) / N);
-		//	}
-		//}
-
-		//iDCTMatrix.col(0) *= KSQRTOf2;
-		//iDCTMatrix *= KSQRTOf2N;
-
-		//cout << iDCTMatrix.transpose() << endl << endl;
-
-		//for (int k = 0; k < N; ++k)
-		//	for (int n = 0; n < N; ++n)
-		//		pixelMatrix(k, n) += 128;
-
-		//cout << pixelMatrix << endl << endl;
+		quantize(pixelMatrix);
 
 		for (int k = 0; k < N; ++k)
 			for (int n = 0; n < N; ++n)
@@ -161,15 +137,13 @@ namespace
 		{
 			pixelMatrix(k, 0) = .5;
 			for (int n = 1; n < N; ++n)
-			{
 				pixelMatrix(k, n) = cos((M_PI * n * (k + .5)) / N);
-			}
 		}
 
 		pixelMatrix.col(0) *= KSQRTOf2;
 		pixelMatrix *= KSQRTOf2N;
 
-		cout << pixelMatrix << endl << endl;
+		//cout << pixelMatrix << endl << endl;
 
 		pixelMatrix = pixelMatrix * dctMatrix * pixelMatrix.inverse();
 
@@ -177,13 +151,12 @@ namespace
 			for (int n = 0; n < N; ++n)
 				pixelMatrix(k, n) += 128;
 
-		cout << pixelMatrix << endl << endl;
+		//cout << pixelMatrix << endl << endl;
 	}
 
 	void Compress(Pixel** pixelArray, int height, int width)
 	{
-		bool stop = false;
-		for (int u = 0; u < width - 8 && !stop; u += 8)
+		for (int u = 0; u < width - 8; u += 8)
 		{
 			for (int v = 0; v < height - 8; v += 8)
 			{
@@ -192,7 +165,7 @@ namespace
 					for (int vp = 0; vp < N; ++vp) // np = n'
 						pixelBlock[up][vp] = pixelArray[u + up][v + vp].Y(); // TOUT BI RIPLASSAIDE OUIZ IUVE LUMINENSSE
 
-				pixelBlock[0][0] = 52;
+				/*pixelBlock[0][0] = 52;
 				pixelBlock[0][1] = 55;
 				pixelBlock[0][2] = 61;
 				pixelBlock[0][3] = 66;
@@ -255,7 +228,7 @@ namespace
 				pixelBlock[7][4] = 65;
 				pixelBlock[7][5] = 76;
 				pixelBlock[7][6] = 78;
-				pixelBlock[7][7] = 94;
+				pixelBlock[7][7] = 94;*/
 
 				double dct[N][N];
 				for (int up = 0; up < N; ++up)
@@ -266,7 +239,6 @@ namespace
 
 				doDCT(pixelBlock, dct);
 				undoDCT(pixelBlock, dct);
-				return; // DEBUG LEL
 
 				for (int up = 0; up < N; ++up) // kp = k'
 					for (int vp = 0; vp < N; ++vp) // np = n'
@@ -300,7 +272,7 @@ int _tmain(int argc, _TCHAR** argv)
 
 	int rowSize = 4 * (((bmpHeader.BitsPerPixels * bmpHeader.ImageWidth) + 31) / 32);
 
-	Pixel** pixelArray = new Pixel*[bmpHeader.ImageWidth];
+	MatrixXd pixelArray = new Pixel*[bmpHeader.ImageWidth];
 	for (int i = 0; i < bmpHeader.ImageWidth; ++i)
 		pixelArray[i] = new Pixel[bmpHeader.ImageHeight];
 
