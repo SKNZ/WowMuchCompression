@@ -15,5 +15,6 @@
 #include <fstream>
 #include <cstdint>
 #include <iomanip>
+#include <Eigen/Dense>
 
 // TODO: reference additional headers your program requires here

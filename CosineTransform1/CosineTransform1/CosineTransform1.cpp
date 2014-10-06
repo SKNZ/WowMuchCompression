@@ -88,73 +88,76 @@ namespace
 #pragma pack()
 
 #define N 8
-	double alpha(int u)
-	{
-		return u == 0 ? 1.f / sqrt(2.f) : 1.f;
-	}
+
+	using Eigen::Matrix;
+
+	const double KInverseOfSQRTOf2 = 1. / sqrt(2.);
+	const double KSQRTOf2N = sqrt(2. / N);
+	const double KSQRTOf2 = sqrt(2.);
+	typedef Matrix<double, N, N> MatrixN;
 
 	void doDCT(double pixelBlock[N][N], double dct[N][N])
 	{
-		for (int u = 0; u < N; ++u)
-			for (int v = 0; v < N; ++v)
-				pixelBlock[u][v] -= 128;
+		MatrixN pixelMatrix, dctMatrix;
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				pixelMatrix(k, n) = pixelBlock[k][n] - 128;
 
-		for (int u = 0; u < N; ++u)
+		for (int k = 0; k < N; ++k)
 		{
-			for (int v = 0; v < N; ++v)
+			for (int n = 0; n < N; ++n)
 			{
-				for (int up = 0; up < N; ++up)
-				{
-					for (int vp = 0; vp < N; ++vp)
-					{
-						dct[u][v] += pixelBlock[up][vp] * cos(((2.f * up + 1.f) * u * M_PI) / 16.f) * cos(((2.f * vp + 1.f) * v * M_PI) / 16.f);
-					}
-				}
-
-				dct[u][v] *= 0.25f * alpha(u) * alpha(v);
+				dctMatrix(k, n) = cos((M_PI * k * (n + .5)) / N);
 			}
 		}
-		
-		cout.precision(5);/*
-		for (int up = 0; up < N; ++up)
-		{
-			for (int vp = 0; vp < N; ++vp)
-				cout << setw(10) << dct[up][vp];
 
-			cout << endl;
-		}*/
+		dctMatrix.row(0) *= KInverseOfSQRTOf2; // Following to the JPEG standard, the first line is multiplied by  
+		dctMatrix *= KSQRTOf2N;
+
+		cout << dctMatrix << endl << endl;
+
+		pixelMatrix = dctMatrix * pixelMatrix * dctMatrix.transpose();
+		pixelMatrix = dctMatrix.transpose() * pixelMatrix * dctMatrix;
+
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				pixelMatrix(k, n) += 128;
+
+		cout << pixelMatrix << endl << endl;
+
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				dct[k][n] = pixelMatrix(k, n);
 	}
 
 	void undoDCT(double pixelBlock[N][N], double dct[N][N])
 	{
-		for (int u = 0; u < N; ++u)
-		{
-			for (int v = 0; v < N; ++v)
-			{
-				for (int up = 0; up < N; ++up)
-				{
-					for (int vp = 0; vp < N; ++vp)
-					{
-						pixelBlock[u][v] += alpha(up) * alpha(vp) * dct[up][vp] * cos(((2.f * u + 1.f) * up * M_PI) / 16.f) * cos(((2.f * v + 1.f) * vp * M_PI) / 16.f);
-					}
-				}
+		MatrixN pixelMatrix, dctMatrix;
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				dctMatrix(k, n) = dct[k][n];
 
-				pixelBlock[u][v] *= 0.25f;
+		for (int k = 0; k < N; ++k)
+		{
+			pixelMatrix(k, 0) = .5;
+			for (int n = 1; n < N; ++n)
+			{
+				pixelMatrix(k, n) = cos((M_PI * n * (k + .5)) / N);
 			}
 		}
 
-		for (int u = 0; u < N; ++u)
-			for (int v = 0; v < N; ++v)
-				pixelBlock[u][v] += 128;
+		pixelMatrix.row(0) *= KSQRTOf2;
+		pixelMatrix *= KSQRTOf2N;
 
-		for (int up = 0; up < N; ++up)
-		{
-			for (int vp = 0; vp < N; ++vp)
-				/*cout << setw(10) << pixelBlock[up][vp];*/
+		cout << pixelMatrix << endl << endl;
 
-			cout << endl;
-		}
+		pixelMatrix = pixelMatrix * dctMatrix * pixelMatrix.inverse();
 
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				pixelMatrix(k, n) += 128;
+
+		cout << pixelMatrix << endl << endl;
 	}
 
 	void Compress(Pixel** pixelArray, int height, int width)
@@ -169,7 +172,7 @@ namespace
 					for (int vp = 0; vp < N; ++vp) // np = n'
 						pixelBlock[up][vp] = pixelArray[u + up][v + vp].Y(); // TOUT BI RIPLASSAIDE OUIZ IUVE LUMINENSSE
 
-				/*pixelBlock[0][0] = 52;
+				pixelBlock[0][0] = 52;
 				pixelBlock[0][1] = 55;
 				pixelBlock[0][2] = 61;
 				pixelBlock[0][3] = 66;
@@ -232,14 +235,23 @@ namespace
 				pixelBlock[7][4] = 65;
 				pixelBlock[7][5] = 76;
 				pixelBlock[7][6] = 78;
-				pixelBlock[7][7] = 94;*/
+				pixelBlock[7][7] = 94;
 
 				double dct[N][N];
 				for (int up = 0; up < N; ++up)
 					for (int vp = 0; vp < N; ++vp)
 						dct[up][vp] = 0.f;
 
+				MatrixN pixelMatrix;
+				for (int k = 0; k < N; ++k)
+					for (int n = 0; n < N; ++n)
+						pixelMatrix(k, n) = pixelBlock[k][n];
+
+				cout.precision(4);
+				cout << pixelMatrix << endl << endl;
+
 				doDCT(pixelBlock, dct);
+				return; // DEBUG LEL
 				undoDCT(pixelBlock, dct);
 				for (int up = 0; up < N; ++up) // kp = k'
 					for (int vp = 0; vp < N; ++vp) // np = n'
