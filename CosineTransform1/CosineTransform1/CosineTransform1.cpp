@@ -97,6 +97,11 @@ namespace
 	const double KSQRTOf2 = sqrt(2.);
 	typedef Matrix<double, N, N> MatrixN;
 
+	void quantize(MatrixN& pixelBlock)
+	{
+
+	}
+
 	void doDCT(double pixelBlock[N][N], double dct[N][N])
 	{
 		MatrixN pixelMatrix, dctMatrix;
@@ -272,7 +277,7 @@ int _tmain(int argc, _TCHAR** argv)
 
 	int rowSize = 4 * (((bmpHeader.BitsPerPixels * bmpHeader.ImageWidth) + 31) / 32);
 
-	MatrixXd pixelArray = new Pixel*[bmpHeader.ImageWidth];
+	Pixel** pixelArray = new Pixel*[bmpHeader.ImageWidth];
 	for (int i = 0; i < bmpHeader.ImageWidth; ++i)
 		pixelArray[i] = new Pixel[bmpHeader.ImageHeight];
 
