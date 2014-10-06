@@ -55,34 +55,34 @@ namespace
 	{
 		uint8_t B, G, R;
 
-		float Y()
+		double Y()
 		{
 			return 0.299 * R + 0.587 * G + 0.114 * B;
 		}
 
-		float Cb()
+		double Cb()
 		{
 			return -0.1687 * R - 0.3313 * G + 0.5 * B + 128;
 		}
 
-		float Cr()
+		double Cr()
 		{
 			return 0.5 * R - 0.4187 * G - 0.0813 * B + 128;
 		}
 
-		void setR(uint8_t Y, uint8_t Cr)
+		void setR(double Y, double Cr)
 		{
-			R = Y + 1.402 * (Cr - 128);
+			R = uint8_t(Y + 1.402 * (Cr - 128));
 		}
 
-		void setG(uint8_t Y, uint8_t Cb, uint8_t Cr)
+		void setG(double Y, double Cb, double Cr)
 		{
-			G = Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128);
+			G = uint8_t(Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
 		}
 
-		void setB(uint8_t Y, uint8_t Cb)
+		void setB(double Y, double Cb)
 		{
-			B = Y + 1.772 * (Cb - 128);
+			B = uint8_t(Y + 1.772 * (Cb - 128));
 		}
 	};
 #pragma pack()
@@ -100,8 +100,14 @@ namespace
 	{
 		MatrixN pixelMatrix, dctMatrix;
 		for (int k = 0; k < N; ++k)
+		{
 			for (int n = 0; n < N; ++n)
+			{
 				pixelMatrix(k, n) = pixelBlock[k][n] - 128;
+				cout << pixelBlock[k][n] << " ";
+			}
+			cout << endl;
+		}
 
 		for (int k = 0; k < N; ++k)
 		{
@@ -111,19 +117,33 @@ namespace
 			}
 		}
 
-		dctMatrix.row(0) *= KInverseOfSQRTOf2; // Following to the JPEG standard, the first line is multiplied by  
+		dctMatrix.row(0) *= KInverseOfSQRTOf2; // Following to the JPEG standard, the first line is multiplied by 1/sqrt(2)
 		dctMatrix *= KSQRTOf2N;
 
 		cout << dctMatrix << endl << endl;
 
 		pixelMatrix = dctMatrix * pixelMatrix * dctMatrix.transpose();
-		pixelMatrix = dctMatrix.transpose() * pixelMatrix * dctMatrix;
 
-		for (int k = 0; k < N; ++k)
-			for (int n = 0; n < N; ++n)
-				pixelMatrix(k, n) += 128;
+		//MatrixN iDCTMatrix;
+		//for (int k = 0; k < N; ++k)
+		//{
+		//	iDCTMatrix(k, 0) = .5;
+		//	for (int n = 1; n < N; ++n)
+		//	{
+		//		iDCTMatrix(k, n) = cos((M_PI * n * (k + .5)) / N);
+		//	}
+		//}
 
-		cout << pixelMatrix << endl << endl;
+		//iDCTMatrix.col(0) *= KSQRTOf2;
+		//iDCTMatrix *= KSQRTOf2N;
+
+		//cout << iDCTMatrix.transpose() << endl << endl;
+
+		//for (int k = 0; k < N; ++k)
+		//	for (int n = 0; n < N; ++n)
+		//		pixelMatrix(k, n) += 128;
+
+		//cout << pixelMatrix << endl << endl;
 
 		for (int k = 0; k < N; ++k)
 			for (int n = 0; n < N; ++n)
@@ -146,7 +166,7 @@ namespace
 			}
 		}
 
-		pixelMatrix.row(0) *= KSQRTOf2;
+		pixelMatrix.col(0) *= KSQRTOf2;
 		pixelMatrix *= KSQRTOf2N;
 
 		cout << pixelMatrix << endl << endl;
@@ -242,17 +262,12 @@ namespace
 					for (int vp = 0; vp < N; ++vp)
 						dct[up][vp] = 0.f;
 
-				MatrixN pixelMatrix;
-				for (int k = 0; k < N; ++k)
-					for (int n = 0; n < N; ++n)
-						pixelMatrix(k, n) = pixelBlock[k][n];
-
 				cout.precision(4);
-				cout << pixelMatrix << endl << endl;
 
 				doDCT(pixelBlock, dct);
-				return; // DEBUG LEL
 				undoDCT(pixelBlock, dct);
+				return; // DEBUG LEL
+
 				for (int up = 0; up < N; ++up) // kp = k'
 					for (int vp = 0; vp < N; ++vp) // np = n'
 					{
