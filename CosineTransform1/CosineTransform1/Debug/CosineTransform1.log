@@ -1,8 +1,11 @@
-﻿La génération a démarré 07/10/2014 00:19:25.
+﻿La génération a démarré 10/10/2014 10:59:35.
      1>Projet "C:\Users\SKNZ\Desktop\Development\IUT\ModMath\CosineTransform1\CosineTransform1\CosineTransform1.vcxproj" sur le nœud 2 (Build cible(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\Users\SKNZ\Desktop\Development\IUT\ModMath\CosineTransform1\eigen /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\CosineTransform1.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CosineTransform1.cpp
          CosineTransform1.cpp
+     1>c:\users\sknz\desktop\development\iut\modmath\cosinetransform1\cosinetransform1\cosinetransform1.cpp(75): warning C4244: '=' : conversion de 'double' en 'uint8_t', perte possible de données
+     1>c:\users\sknz\desktop\development\iut\modmath\cosinetransform1\cosinetransform1\cosinetransform1.cpp(80): warning C4244: '=' : conversion de 'double' en 'uint8_t', perte possible de données
+     1>c:\users\sknz\desktop\development\iut\modmath\cosinetransform1\cosinetransform1\cosinetransform1.cpp(85): warning C4244: '=' : conversion de 'double' en 'uint8_t', perte possible de données
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\SKNZ\Desktop\Development\IUT\ModMath\CosineTransform1\Debug\CosineTransform1.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\SKNZ\Desktop\Development\IUT\ModMath\CosineTransform1\Debug\CosineTransform1.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\SKNZ\Desktop\Development\IUT\ModMath\CosineTransform1\Debug\CosineTransform1.lib" /MACHINE:X86 Debug\CosineTransform1.obj
          Debug\stdafx.obj
@@ -11,4 +14,4 @@
 
 La génération a réussi.
 
-Temps écoulé 00:00:12.82
+Temps écoulé 00:00:04.11

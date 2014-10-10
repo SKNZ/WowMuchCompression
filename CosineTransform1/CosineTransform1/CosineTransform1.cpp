@@ -72,17 +72,17 @@ namespace
 
 		void setR(double Y, double Cr)
 		{
-			R = uint8_t(Y + 1.402 * (Cr - 128));
+			R = round(Y + 1.402 * (Cr - 128));
 		}
 
 		void setG(double Y, double Cb, double Cr)
 		{
-			G = uint8_t(Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
+			G = round(Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
 		}
 
 		void setB(double Y, double Cb)
 		{
-			B = uint8_t(Y + 1.772 * (Cb - 128));
+			B = round(Y + 1.772 * (Cb - 128));
 		}
 	};
 #pragma pack()
@@ -91,15 +91,31 @@ namespace
 
 	using Eigen::Matrix;
 	using Eigen::MatrixXd;
+	using Eigen::Map;
+
+	typedef Matrix<double, N, N> MatrixN;
 
 	const double KInverseOfSQRTOf2 = 1. / sqrt(2.);
 	const double KSQRTOf2N = sqrt(2. / N);
 	const double KSQRTOf2 = sqrt(2.);
-	typedef Matrix<double, N, N> MatrixN;
+	MatrixN quantizationMatrix;
 
 	void quantize(MatrixN& pixelBlock)
 	{
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				pixelBlock(k, n) = round(pixelBlock(k, n) / quantizationMatrix(k, n));
 
+		/*cout << pixelBlock << endl;
+		system("pause");
+		exit(0);*/
+	}
+
+	void unquantize(MatrixN& pixelBlock)
+	{
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				pixelBlock(k, n) = round(pixelBlock(k, n) * quantizationMatrix(k, n));
 	}
 
 	void doDCT(double pixelBlock[N][N], double dct[N][N])
@@ -123,8 +139,9 @@ namespace
 		//cout << dctMatrix << endl << endl;
 
 		pixelMatrix = dctMatrix * pixelMatrix * dctMatrix.transpose();
-
 		quantize(pixelMatrix);
+
+		//cout << pixelMatrix << endl;
 
 		for (int k = 0; k < N; ++k)
 			for (int n = 0; n < N; ++n)
@@ -149,26 +166,55 @@ namespace
 		pixelMatrix *= KSQRTOf2N;
 
 		//cout << pixelMatrix << endl << endl;
+		unquantize(dctMatrix);
 
 		pixelMatrix = pixelMatrix * dctMatrix * pixelMatrix.inverse();
 
 		for (int k = 0; k < N; ++k)
 			for (int n = 0; n < N; ++n)
+				pixelMatrix(k, n) = round(pixelMatrix(k, n));
+
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
 				pixelMatrix(k, n) += 128;
+
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				pixelBlock[k][n] = pixelMatrix(k, n);
 
 		//cout << pixelMatrix << endl << endl;
 	}
 
 	void Compress(Pixel** pixelArray, int height, int width)
 	{
-		for (int u = 0; u < width - 8; u += 8)
+		double q[N][N] = {	{ 16.,  12.,  14.,  14.,  18.,  24.,  49.,  72. },
+							{ 11.,  12.,  13.,  17.,  22.,  35.,  64.,  92. },
+							{ 10.,  14.,  16.,  22.,  37.,  55.,  78.,  95. },
+							{ 16.,  19.,  24.,  29.,  56.,  64.,  87.,  98. },
+							{ 24.,  26.,  40.,  51.,  68.,  81., 103., 112. },
+							{ 40.,  58.,  57.,  87., 109., 104., 121., 100. },
+							{ 51.,  60.,  69.,  80., 103., 113., 120., 103. },
+							{ 61.,  55.,  56.,  62.,  77.,  92., 101.,  99. } };
+
+		Map<MatrixN> m(&q[0][0], N, N);
+		quantizationMatrix = MatrixN(m);/*
+		for (int k = 0; k < N; ++k)
+			for (int n = 0; n < N; ++n)
+				quantizationMatrix(k, n) = round(quantizationMatrix(k, n) * (50/20));*/
+		cout << quantizationMatrix << endl;
+
+		for (int u = 0; u + 8 < width; u += 8)
 		{
-			for (int v = 0; v < height - 8; v += 8)
+			for (int v = 0; v + 8 < height; v += 8)
 			{
-				double pixelBlock[N][N];
+				double y[N][N], cb[N][N], cr[N][N];
 				for (int up = 0; up < N; ++up) // kp = k'
 					for (int vp = 0; vp < N; ++vp) // np = n'
-						pixelBlock[up][vp] = pixelArray[u + up][v + vp].Y(); // TOUT BI RIPLASSAIDE OUIZ IUVE LUMINENSSE
+					{
+						y[up][vp] = pixelArray[u + up][v + vp].Y();
+						cb[up][vp] = pixelArray[u + up][v + vp].Cb();
+						cr[up][vp] = pixelArray[u + up][v + vp].Cr();
+					}
 
 				/*pixelBlock[0][0] = 52;
 				pixelBlock[0][1] = 55;
@@ -235,22 +281,23 @@ namespace
 				pixelBlock[7][6] = 78;
 				pixelBlock[7][7] = 94;*/
 
-				double dct[N][N];
-				for (int up = 0; up < N; ++up)
-					for (int vp = 0; vp < N; ++vp)
-						dct[up][vp] = 0.f;
+				double dctY[N][N], dctCb[N][N], dctCr[N][N];
 
 				cout.precision(4);
 
-				doDCT(pixelBlock, dct);
-				undoDCT(pixelBlock, dct);
+				doDCT(y, dctY);
+				undoDCT(y, dctY);
+				doDCT(cb, dctCb);
+				undoDCT(cb, dctCb);
+				doDCT(cr, dctCr);
+				undoDCT(cr, dctCr);
 
 				for (int up = 0; up < N; ++up) // kp = k'
 					for (int vp = 0; vp < N; ++vp) // np = n'
 					{
-						pixelArray[u + up][v + vp].setR(pixelBlock[up][vp], pixelArray[u + up][v + vp].Cr());
-						pixelArray[u + up][v + vp].setG(pixelBlock[up][vp], pixelArray[u + up][v + vp].Cb(), pixelArray[u + up][v + vp].Cr());
-						pixelArray[u + up][v + vp].setB(pixelBlock[up][vp], pixelArray[u + up][v + vp].Cb());
+						pixelArray[u + up][v + vp].setR(y[up][vp], cr[up][vp]);
+						pixelArray[u + up][v + vp].setG(y[up][vp], cb[up][vp], cr[up][vp]);
+						pixelArray[u + up][v + vp].setB(y[up][vp], cb[up][vp]);
 					}
 			}
 		}
