@@ -56,14 +56,15 @@ void CCompressor::run()
 
 	/**
 	  * CDiscreteCosineTransform est une classe qui applique la transformée en cosinus discrète sur un CComponentFrame.
-	  * Elle accepte comme paramètres un booléen, indiquant si une quantification doit avoir lieu.
-	  * Elle accepte un deuxième paramètre entier, indiquant la qualité en pourcentage après la quantification
+	  * Elle accepte un premier paramètre booléen, indiquant si la dct doit être inverse (iDCT).
+	  * Elle accepte comme deuxième paramètre paramètre un booléen, indiquant si une quantification doit avoir lieu.
+	  * Elle accepte un troisème paramètre entier, indiquant la qualité en pourcentage après la quantification
 	  * par rapport à l'image originale.
 	  *
 	  **/
-	CDiscreteCosineTransform dct(true);
+	CDiscreteCosineTransform dct(false, true);
 
-	for (int i = 0;; ++i)
+	for (int i = 0; videoLoader.GetNextYCbCrFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame); ++i)
 	{
 		cout << i << ": processing frame." << endl;
 
@@ -86,11 +87,7 @@ void CCompressor::run()
 		currentCrVideoFrame = nextCrVideoFrame;
 
 		cout << endl;
-
-		if (!videoLoader.GetNextYCbCrFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
-		{
-			cout << "There are no more frames to be read." << endl;
-			break;
-		}
 	}
+
+	cout << "There are no more frames to be read." << endl;
 }
