@@ -30,13 +30,12 @@ bool nsWMC::CRawVideoLoader::GetNextYCbCrFrame(CComponentFrame& YVideoFrame, CCo
 		CbVideoFrame.resize(m_width, m_height);
 		CrVideoFrame.resize(m_width, m_height);
 
-		for (int n = 0; n < m_height; ++n)
+		for (int k = 0; k < m_width; ++k)
 		{
-			for (int k = 0; k < m_width; ++k)
+			for (int n = 0; n < m_height; ++n)
 			{
-				Point3_<uchar>* p = videoFrame.ptr<Point3_<uchar>>(n, k);
-				RGBToYCbCr(p->z, p->y, p->x, YVideoFrame(k, n), CbVideoFrame(k, n),	CrVideoFrame(k, n));
-						  // B,    G,   R
+				Vec3b rgbValues = videoFrame.at<Vec3b>(n, k);
+				RGBToYCbCr(rgbValues[2], rgbValues[1], rgbValues[0], YVideoFrame(k, n), CbVideoFrame(k, n),	CrVideoFrame(k, n));
 			}
 		}
 

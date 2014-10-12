@@ -25,6 +25,9 @@ CDiscreteCosineTransform::CDiscreteCosineTransform(bool inverse, bool quantize, 
 							51,  60,  69,  80, 103, 113, 120, 103,
 							61,  55,  56,  62,  77,  92, 101,  99;
 
+	if (quantizationLevel != 50)
+		m_quantizationMatrix *= m_quantizationLevel > 50 ? (100 - m_quantizationLevel) / 50 : 50 / m_quantizationLevel;
+
 	std::cout << "DCT provider: initialized." << std::endl << std::endl;
 }
 
@@ -63,7 +66,8 @@ void CDiscreteCosineTransform::setQuantizationLevel(int quality)
 							51,  60,  69,  80, 103, 113, 120, 103,
 							61,  55,  56,  62,  77,  92, 101,  99;
 
-	m_quantizationMatrix *= m_quantizationLevel > 50 ? (100 - m_quantizationLevel) / 50 : 50 / m_quantizationLevel;
+	if (m_quantizationLevel != 50)
+		m_quantizationMatrix *= m_quantizationLevel > 50 ? (100 - m_quantizationLevel) / 50 : 50 / m_quantizationLevel;
 }
 
 int CDiscreteCosineTransform::getQuantizationLevel() const
@@ -79,9 +83,10 @@ void CDiscreteCosineTransform::operator()(CComponentFrame& frame) const
 		{
 			CComponentBlock componentBlock = frame.block<PIXEL_BLOCK_SIZE, PIXEL_BLOCK_SIZE>(k, n);
 
-			for (int kprime = 0; kprime < PIXEL_BLOCK_SIZE; ++kprime)
-				for (int nprime = 0; nprime < PIXEL_BLOCK_SIZE; ++nprime)
-					componentBlock(kprime, nprime) -= 128;
+			if (!m_inverse)
+				for (int kprime = 0; kprime < PIXEL_BLOCK_SIZE; ++kprime)
+					for (int nprime = 0; nprime < PIXEL_BLOCK_SIZE; ++nprime)
+						componentBlock(kprime, nprime) -= 128;
 
 			componentBlock = m_inverse ? m_dctMatrixInverse * componentBlock * m_dctMatrix : m_dctMatrix * componentBlock * m_dctMatrixInverse;
 			
@@ -92,6 +97,13 @@ void CDiscreteCosineTransform::operator()(CComponentFrame& frame) const
 				else
 					componentBlock.cwiseQuotient(m_quantizationMatrix); // Division élément par élément
 			}
+
+			if (m_inverse)
+				for (int kprime = 0; kprime < PIXEL_BLOCK_SIZE; ++kprime)
+					for (int nprime = 0; nprime < PIXEL_BLOCK_SIZE; ++nprime)
+						componentBlock(kprime, nprime) += 128;
+
+			frame.block<PIXEL_BLOCK_SIZE, PIXEL_BLOCK_SIZE>(k, n) = componentBlock;
 		}
 	}
 }

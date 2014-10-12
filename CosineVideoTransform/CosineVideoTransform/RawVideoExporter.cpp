@@ -20,16 +20,17 @@ CRawVideoExporter::CRawVideoExporter(const std::string& filePath, int width, int
 
 void CRawVideoExporter::ExportFrame(const CComponentFrame& YVideoFrame, const CComponentFrame& CbVideoFrame, const CComponentFrame& CrVideoFrame)
 {
-	static Mat videoFrame(m_width, m_height, CV_8UC3);
-
+	Mat videoFrame(m_height, m_width, CV_8UC3);
+	
 	for (int k = 0; k < m_width; ++k)
 	{
-		for (int n = 0; k < m_height; ++n)
+		for (int n = 0; n < m_height; ++n)
 		{
-			Point3_<uchar>* p = videoFrame.ptr<Point3_<uchar>>(n, k);
-			YCbCrToRGB(YVideoFrame(k, n), CbVideoFrame(k, n), CrVideoFrame(k, n), p->z, p->y, p->x);
-					//	Y					Cb					Cr					B	G		R
+			Vec3b rgbValues = videoFrame.at<Vec3b>(n, k);
+			YCbCrToRGB(YVideoFrame(k, n), CbVideoFrame(k, n), CrVideoFrame(k, n), rgbValues[2], rgbValues[1], rgbValues[0]);
+			videoFrame.at<Vec3b>(n, k) = rgbValues;
 		}
 	}
-	m_videoWriter.write(videoFrame);
+
+	m_videoWriter << videoFrame;
 }

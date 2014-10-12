@@ -64,7 +64,7 @@ void CCompressor::run() const
 	  **/
 	CDiscreteCosineTransform dct(false, true);
 
-	for (int i = 0; rawVideoLoader.GetNextYCbCrFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame); ++i)
+	for (int i = 0;; ++i)
 	{
 		cout << i << ": processing frame." << endl;
 
@@ -79,7 +79,7 @@ void CCompressor::run() const
 
 		cout << "Done." << endl << "\tSaving frame to file... ";
 		compressedVideoWriter.SaveFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
-
+		
 		cout << "Done." << endl;
 
 		currentYVideoFrame = nextYVideoFrame;
@@ -87,14 +87,33 @@ void CCompressor::run() const
 		currentCrVideoFrame = nextCrVideoFrame;
 
 		cout << endl;
+		if (!rawVideoLoader.GetNextYCbCrFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
+		{
+			cout << i + 1 << ": processing frame." << endl;
+
+			cout << "\tApplying discrete cosine transform on Y component... ";
+			dct(currentYVideoFrame);
+
+			cout << "Done." << endl << "\tApplying discrete cosine transform on Cb component... ";
+			dct(currentCbVideoFrame);
+
+			cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
+			dct(currentCrVideoFrame);
+
+			cout << "Done." << endl << "\tSaving frame to file... ";
+			compressedVideoWriter.SaveFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
+
+			cout << "Done." << endl;
+			break;
+		}
 	}
-	
+
+	cout << "There are no more frames to be read." << endl;
+
 	/**
 	  * On cloture le fichier en inscrivant au début le nombre de frames écrites
 	  * et en libérant les ressources systèmes allouées.
 	  *
 	  **/
 	compressedVideoWriter.Finalize();
-
-	cout << "There are no more frames to be read." << endl;
 }

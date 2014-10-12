@@ -40,7 +40,7 @@ void CExtractor::run() const
 
 	CDiscreteCosineTransform dct(true, true);
 
-	for (int i = 0; videoReader.ReadFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame); ++i)
+	for (int i = 0;; ++i)
 	{
 		cout << i << ": processing frame." << endl;
 
@@ -63,5 +63,25 @@ void CExtractor::run() const
 		currentCrVideoFrame = nextCrVideoFrame;
 
 		cout << endl;
+
+		if (!videoReader.ReadFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
+		{
+			cout << i + 1 << ": processing frame." << endl;
+
+			cout << "\tApplying discrete cosine transform on Y component... ";
+			dct(currentYVideoFrame);
+
+			cout << "Done." << endl << "\tApplying discrete cosine transform on Cb component... ";
+			dct(currentCbVideoFrame);
+
+			cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
+			dct(currentCrVideoFrame);
+
+			cout << "Done." << endl << "\tSaving frame to file... ";
+			rawVideoExporter.ExportFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
+
+			cout << "Done." << endl;
+			break;
+		}
 	}
 }

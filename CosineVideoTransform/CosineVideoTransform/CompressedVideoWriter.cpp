@@ -9,21 +9,23 @@ CCompressedVideoWriter::CCompressedVideoWriter(const std::string& filePath, uint
 	if (!m_fileStream)
 		throw runtime_error("Failed to open output compressed file stream.");
 
-	m_fileStream << (uint32_t)0u << m_width << m_height;
-	// On met 0 à l'endroit ou le nombre de frame sera mis.
+	m_fileStream.write(reinterpret_cast<const char*>(&m_frameCount), sizeof(uint32_t));
+	m_fileStream.write(reinterpret_cast<const char*>(&m_width), sizeof(uint16_t));
+	m_fileStream.write(reinterpret_cast<const char*>(&m_height), sizeof(uint16_t));
 }
 
 void CCompressedVideoWriter::Finalize()
 {
 	m_fileStream.seekp(ios::beg);
-	m_fileStream << m_frameCount;
+	cout << "Frames written: " << m_frameCount << '.' << endl;
+	m_fileStream.write(reinterpret_cast<const char*>(&m_frameCount), sizeof(uint32_t));
 	m_fileStream.close();
 }
 
 void CCompressedVideoWriter::SaveFrame(const CComponentFrame& YVideoFrame, const CComponentFrame& CbVideoFrame, const CComponentFrame& CrVideoFrame)
 {
-	m_fileStream.write(reinterpret_cast<const char*>(YVideoFrame.data()), YVideoFrame.count() * sizeof(double));
-	m_fileStream.write(reinterpret_cast<const char*>(CbVideoFrame.data()), CbVideoFrame.count() * sizeof(double));
-	m_fileStream.write(reinterpret_cast<const char*>(CrVideoFrame.data()), CrVideoFrame.count() * sizeof(double));
+	m_fileStream.write(reinterpret_cast<const char*>(YVideoFrame.data()), YVideoFrame.rows() * YVideoFrame.cols() * sizeof(double));
+	m_fileStream.write(reinterpret_cast<const char*>(CbVideoFrame.data()), CbVideoFrame.rows() * CbVideoFrame.cols() * sizeof(double));
+	m_fileStream.write(reinterpret_cast<const char*>(CrVideoFrame.data()), CrVideoFrame.rows() * CrVideoFrame.cols() * sizeof(double));
 	++m_frameCount;
 }

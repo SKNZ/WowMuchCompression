@@ -10,11 +10,11 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	try
 	{
-		CCompressor compressor("original.avi", "compressed.wmc");
-		compressor.run();
+		/*CCompressor compressor("original.avi", "compressed.wmc");
+		compressor.run();*/
 
-		/*CExtractor extractor("compressed.wmc", "extracted.avi");
-		extractor.run();*/
+		CExtractor extractor("compressed.wmc", "extracted.avi");
+		extractor.run();
 	}
 	catch (const exception& e) // Gestion d'erreur
 	{
