@@ -8,7 +8,7 @@ namespace nsWMC
 	{
 	public:
 		CCompressor(const std::string& inputFilePath, const std::string& outputFilePath);
-		void run();
+		void run() const;
 
 	private:
 		const std::string m_inputFilePath;

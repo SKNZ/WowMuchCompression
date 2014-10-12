@@ -20,10 +20,12 @@
 #include <fstream>
 
 #include "Utils.h"
-#include "VideoLoader.h"
+#include "RawVideoLoader.h"
 #include "DiscreteCosineTransform.h"
 #include "Compressor.h"
 #include "CompressedVideoWriter.h"
-
+#include "Extractor.h"
+#include "CompressedVideoReader.h"
+#include "RawVideoExporter.h"
 
 // TODO: reference additional headers your program requires here

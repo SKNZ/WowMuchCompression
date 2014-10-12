@@ -12,6 +12,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		CCompressor compressor("original.avi", "compressed.wmc");
 		compressor.run();
+
+		/*CExtractor extractor("compressed.wmc", "extracted.avi");
+		extractor.run();*/
 	}
 	catch (const exception& e) // Gestion d'erreur
 	{
