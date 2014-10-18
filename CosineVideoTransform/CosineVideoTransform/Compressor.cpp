@@ -26,11 +26,15 @@ void CCompressor::run() const
 	  *
 	  * Il y a 3 composantes - Y, Cb & Cr. On déclare donc 3 CComponentFrame par image.
 	  *
-	  * On stocke l'image courrante ainsi que l'image suivante - on déclare donc 6 CComponentFrame.
+	  **/
+	CComponentFrame currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame;
+
+	/**
+	  * La classe CSerializableComponentFrame représente les mêmes données que CComponentFrame
+	  * mais sous la forme d'une suite de données continue, plus simple à stocker dans des fichiers.
 	  *
 	  **/
-	CComponentFrame currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame,
-		nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame;
+	CSerializableComponentFrame serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame;
 
 	/**
 	  * Les frames (images) du fichier vidéo sont importées avec comme format de couleur RGB (Red Green Blue).
@@ -43,16 +47,15 @@ void CCompressor::run() const
 	if (!rawVideoLoader.GetNextYCbCrFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame))
 		throw runtime_error("Couldn't load first frame.");
 
-	if (!rawVideoLoader.GetNextYCbCrFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
-		throw runtime_error("Couldn't load second frame.");
-
 	/**
 	  * CCompressedVideoWriter est une classe permettant d'exporter vers un fichier les données une fois compréssée.
 	  * Les données sont stockées dans un format propre au codec WMC.
 	  * Un fichier créer par CCompressedVideoWriter doit donc être lu avec CCompressedVideoReader.
 	  * 
 	  **/
-	CCompressedVideoWriter compressedVideoWriter(m_outputFilePath, rawVideoLoader.GetWidth(), rawVideoLoader.GetHeight());
+	CCompressedVideoWriter compressedVideoWriter(m_outputFilePath,
+						rawVideoLoader.GetWidth(), rawVideoLoader.GetHeight(),
+						rawVideoLoader.GetWidthPadding(), rawVideoLoader.GetHeightPadding());
 
 	/**
 	  * CDiscreteCosineTransform est une classe qui applique la transformée en cosinus discrète sur un CComponentFrame.
@@ -64,11 +67,36 @@ void CCompressor::run() const
 	  **/
 	CDiscreteCosineTransform dct(false, true);
 
-	for (int i = 0;; ++i)
+	/**
+	  * CChromaSubsampler est une classe qui sous échantillone une composante.
+	  * A terme, elle permet de ne stocker, pour 4 composantes Y, une seule composante Cb et une seule composante Cr.
+	  * C'est une opération "avec perte".
+	  *
+	  **/
+	CChromaSubsampler chromaSubsampler;
+
+	/**
+	  * CRunLengthEncoder une classe permettant de "factoriser" les suites de zéros consécutifs.
+	  * Sur une matrice DCT quantifiée, plus on est loin de (0,0) (hautes fréquences), plus les valeurs sont petites.
+	  * Les valeurs proches de 0 sont arrondies à 0 lors de la quantification.
+	  * Le RunLengthEncoder permet alors de factoriser une suite de zéros dans la matrice en ne gardant qu'un seul zéro
+	  * suivi du nombre de zéro qu'il y avait originalement.
+	  *
+	  **/
+	CRunLengthEncoder runLengthEncoder;
+	
+	// Pour chaque frame
+	for (int i = 0; rawVideoLoader.GetNextYCbCrFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame); ++i)
 	{
 		cout << i << ": processing frame." << endl;
 
-		cout << "\tApplying discrete cosine transform on Y component... ";
+		cout << "\tChroma subsampling on Cb component... ";
+		chromaSubsampler(currentCbVideoFrame);
+
+		cout << "Done." << endl << "\tChroma subsampling on Cr component... ";
+		chromaSubsampler(currentCrVideoFrame);
+
+		cout << "Done." << endl << "\tApplying discrete cosine transform on Y component... ";
 		dct(currentYVideoFrame);
 
 		cout << "Done." << endl << "\tApplying discrete cosine transform on Cb component... ";
@@ -77,35 +105,21 @@ void CCompressor::run() const
 		cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
 		dct(currentCrVideoFrame);
 
+		cout << "Done." << endl << "\tRun length encoding on Y component... ";
+		runLengthEncoder(currentYVideoFrame, serializableYVideoFrame);
+
+		cout << "Done." << endl << "\tRun length encoding on Cb component... ";
+		runLengthEncoder(currentCbVideoFrame, serializableCbVideoFrame);
+
+		cout << "Done." << endl << "\tRun length encoding on Cr component... ";
+		runLengthEncoder(currentCrVideoFrame, serializableCrVideoFrame);
+
 		cout << "Done." << endl << "\tSaving frame to file... ";
-		compressedVideoWriter.SaveFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
+		compressedVideoWriter.SaveFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame);
 		
 		cout << "Done." << endl;
 
-		currentYVideoFrame = nextYVideoFrame;
-		currentCbVideoFrame = nextCbVideoFrame;
-		currentCrVideoFrame = nextCrVideoFrame;
-
 		cout << endl;
-		if (!rawVideoLoader.GetNextYCbCrFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
-		{
-			cout << i + 1 << ": processing frame." << endl;
-
-			cout << "\tApplying discrete cosine transform on Y component... ";
-			dct(currentYVideoFrame);
-
-			cout << "Done." << endl << "\tApplying discrete cosine transform on Cb component... ";
-			dct(currentCbVideoFrame);
-
-			cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
-			dct(currentCrVideoFrame);
-
-			cout << "Done." << endl << "\tSaving frame to file... ";
-			compressedVideoWriter.SaveFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
-
-			cout << "Done." << endl;
-			break;
-		}
 	}
 
 	cout << "There are no more frames to be read." << endl;

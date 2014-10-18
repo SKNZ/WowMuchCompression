@@ -18,70 +18,60 @@ void CExtractor::run() const
 	  **/
 	CCompressedVideoReader videoReader(m_inputFile);
 	
-	/**
-	  * La classe CComponentFrame est une classe qui permet de stocker toutes les valeurs d'une composante pour une image.
-	  * Par exemple, toutes les valeurs de Y pour une image I. Elle fait donc office de matrice pour une composante image entière.
-	  *
-	  * Il y a 3 composantes - Y, Cb & Cr. On déclare donc 3 CComponentFrame par image.
-	  *
-	  * On stocke l'image courrante ainsi que l'image suivante - on déclare donc 6 CComponentFrame.
-	  *
-	  **/
-	CComponentFrame currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame,
-					nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame;
+	CComponentFrame yVideoFrame, cbVideoFrame, crVideoFrame;
 
-	if (!videoReader.ReadFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame))
+	CSerializableComponentFrame serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame;
+
+	if (!videoReader.ReadFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame))
 		throw runtime_error("Couldn't read first frame.");
 
-	if (!videoReader.ReadFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
-		throw runtime_error("Couldn't read second frame.");
-
-	CRawVideoExporter rawVideoExporter(m_outputFile, videoReader.GetWidth(), videoReader.GetHeight());
+	CRawVideoExporter rawVideoExporter(m_outputFile,
+		videoReader.GetWidth(), videoReader.GetHeight(),
+		videoReader.GetWidthPadding(), videoReader.GetHeightPadding());
 
 	CDiscreteCosineTransform dct(true, true);
 
-	for (int i = 0;; ++i)
+	CChromaSubsampler chromaResampler(true);
+
+	CRunLengthEncoder runLengthDecoder(true);
+
+	for (int i = 0; videoReader.ReadFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame); ++i)
 	{
 		cout << i << ": processing frame." << endl;
 
-		cout << "\tApplying discrete cosine transform on Y component... ";
-		dct(currentYVideoFrame);
+		yVideoFrame.resize(videoReader.GetWidth(), videoReader.GetHeight());
+		cbVideoFrame.resize(videoReader.GetWidth() / 2, videoReader.GetHeight() / 4);
+		crVideoFrame.resize(videoReader.GetWidth() / 2, videoReader.GetHeight() / 4);
 
-		cout << "Done." << endl << "\tApplying discrete cosine transform on Cb component... ";
-		dct(currentCbVideoFrame);
+		cout << "\tRun length decoding on Y component... ";
+		runLengthDecoder(yVideoFrame, serializableYVideoFrame);
 
-		cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
-		dct(currentCrVideoFrame);
+		cout << "Done." << endl << "\tRun length decoding on Cb component... ";
+		runLengthDecoder(cbVideoFrame, serializableCbVideoFrame);
+
+		cout << "Done." << endl << "\tRun length decoding on Cr component... ";
+		runLengthDecoder(crVideoFrame, serializableCrVideoFrame);
+
+		cout << "Done." << endl << "\tApplying inverse discrete cosine transform on Y component... ";
+		dct(yVideoFrame);
+
+		cout << "Done." << endl << "\tApplying inverse discrete cosine transform on Cb component... ";
+		dct(cbVideoFrame);
+
+		cout << "Done." << endl << "\tApplying inverse discrete cosine transform on Cr component... ";
+		dct(crVideoFrame);
+
+		cout << "Done." << endl << "\tChroma resampling on Cb component... ";
+		chromaResampler(cbVideoFrame);
+
+		cout << "Done." << endl << "\tChroma resampling on Cr component... ";
+		chromaResampler(crVideoFrame);
 
 		cout << "Done." << endl << "\tSaving frame to file... ";
-		rawVideoExporter.ExportFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
+		rawVideoExporter.ExportFrame(yVideoFrame, cbVideoFrame, crVideoFrame);
 
 		cout << "Done." << endl;
 
-		currentYVideoFrame = nextYVideoFrame;
-		currentCbVideoFrame = nextCbVideoFrame;
-		currentCrVideoFrame = nextCrVideoFrame;
-
 		cout << endl;
-
-		if (!videoReader.ReadFrame(nextYVideoFrame, nextCbVideoFrame, nextCrVideoFrame))
-		{
-			cout << i + 1 << ": processing frame." << endl;
-
-			cout << "\tApplying discrete cosine transform on Y component... ";
-			dct(currentYVideoFrame);
-
-			cout << "Done." << endl << "\tApplying discrete cosine transform on Cb component... ";
-			dct(currentCbVideoFrame);
-
-			cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
-			dct(currentCrVideoFrame);
-
-			cout << "Done." << endl << "\tSaving frame to file... ";
-			rawVideoExporter.ExportFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame);
-
-			cout << "Done." << endl;
-			break;
-		}
 	}
 }

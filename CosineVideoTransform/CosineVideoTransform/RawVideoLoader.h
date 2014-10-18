@@ -14,10 +14,14 @@ namespace nsWMC
 		int GetWidth() const;
 
 		int GetHeight() const;
+
+		int GetWidthPadding() const;
+
+		int GetHeightPadding() const;
 		
 	private:
 		const std::string m_filePath;
 		cv::VideoCapture m_videoFile;
-		int m_width, m_height;
+		int m_width, m_height, m_widthPadding, m_heightPadding;
 	};
 }

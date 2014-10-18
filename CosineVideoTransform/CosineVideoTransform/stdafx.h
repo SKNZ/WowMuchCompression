@@ -18,6 +18,10 @@
 #include <cstdint>
 #include <cmath>
 #include <fstream>
+#include <string>
+#include <chrono>
+#include <ctime>
+#include "intrin.h"
 
 #include "Utils.h"
 #include "RawVideoLoader.h"
@@ -27,5 +31,8 @@
 #include "Extractor.h"
 #include "CompressedVideoReader.h"
 #include "RawVideoExporter.h"
+#include "ChromaSubsampler.h"
+#include "RunLengthEncoder.h"
+#include "MotionCompensator.h"
 
 // TODO: reference additional headers your program requires here

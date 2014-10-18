@@ -3,8 +3,10 @@
 using namespace nsWMC;
 using namespace std;
 
-CCompressedVideoWriter::CCompressedVideoWriter(const std::string& filePath, uint16_t width, uint16_t height)
-	: m_filePath(filePath), m_fileStream(filePath, ios::out | ios::trunc | ios::binary), m_width(width), m_height(height), m_frameCount(0)
+CCompressedVideoWriter::CCompressedVideoWriter(const std::string& filePath, uint16_t width, uint16_t height, uint8_t widthPadding, uint8_t heightPadding)
+	: m_filePath(filePath), m_fileStream(filePath, ios::out | ios::trunc | ios::binary),
+		m_width(width), m_height(height), m_frameCount(0),
+		m_widthPadding(widthPadding), m_heightPadding(heightPadding)
 {
 	if (!m_fileStream)
 		throw runtime_error("Failed to open output compressed file stream.");
@@ -12,6 +14,8 @@ CCompressedVideoWriter::CCompressedVideoWriter(const std::string& filePath, uint
 	m_fileStream.write(reinterpret_cast<const char*>(&m_frameCount), sizeof(uint32_t));
 	m_fileStream.write(reinterpret_cast<const char*>(&m_width), sizeof(uint16_t));
 	m_fileStream.write(reinterpret_cast<const char*>(&m_height), sizeof(uint16_t));
+	m_fileStream.write(reinterpret_cast<const char*>(&m_widthPadding), sizeof(uint8_t));
+	m_fileStream.write(reinterpret_cast<const char*>(&m_heightPadding), sizeof(uint8_t));
 }
 
 void CCompressedVideoWriter::Finalize()
@@ -22,10 +26,24 @@ void CCompressedVideoWriter::Finalize()
 	m_fileStream.close();
 }
 
-void CCompressedVideoWriter::SaveFrame(const CComponentFrame& YVideoFrame, const CComponentFrame& CbVideoFrame, const CComponentFrame& CrVideoFrame)
+void CCompressedVideoWriter::SaveFrame(const CSerializableComponentFrame& YVideoFrame,
+	const CSerializableComponentFrame& CbVideoFrame,
+	const CSerializableComponentFrame& CrVideoFrame)
 {
-	m_fileStream.write(reinterpret_cast<const char*>(YVideoFrame.data()), YVideoFrame.rows() * YVideoFrame.cols() * sizeof(double));
-	m_fileStream.write(reinterpret_cast<const char*>(CbVideoFrame.data()), CbVideoFrame.rows() * CbVideoFrame.cols() * sizeof(double));
-	m_fileStream.write(reinterpret_cast<const char*>(CrVideoFrame.data()), CrVideoFrame.rows() * CrVideoFrame.cols() * sizeof(double));
+	// On écrit la taille de chaque frame après la RLE
+	CSerializableComponentFrame::size_type size = YVideoFrame.size();
+	m_fileStream.write(reinterpret_cast<const char*>(&size), sizeof(CSerializableComponentFrame::size_type));
+
+	size = CbVideoFrame.size();
+	m_fileStream.write(reinterpret_cast<const char*>(&size), sizeof(CSerializableComponentFrame::size_type));
+
+	size = CrVideoFrame.size();
+	m_fileStream.write(reinterpret_cast<const char*>(&size), sizeof(CSerializableComponentFrame::size_type));
+
+	// On écrit la frame
+	m_fileStream.write(reinterpret_cast<const char*>(&YVideoFrame[0]), YVideoFrame.size() * sizeof(CSerializedComponentType));
+	m_fileStream.write(reinterpret_cast<const char*>(&CbVideoFrame[0]), CbVideoFrame.size() * sizeof(CSerializedComponentType));
+	m_fileStream.write(reinterpret_cast<const char*>(&CrVideoFrame[0]), CrVideoFrame.size() * sizeof(CSerializedComponentType));
+
 	++m_frameCount;
 }
