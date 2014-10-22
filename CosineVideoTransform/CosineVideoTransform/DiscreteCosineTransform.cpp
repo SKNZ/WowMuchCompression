@@ -1,11 +1,11 @@
 #include "stdafx.h"
 
 using namespace nsWMC;
-
+using namespace std;
 CDiscreteCosineTransform::CDiscreteCosineTransform(bool inverse, bool quantize, int quantizationLevel)
 	: m_inverse(inverse), m_quantize(quantize), m_quantizationLevel(quantizationLevel)
 {
-	std::cout << "DCT provider: initializing." << std::endl;
+	cout << "DCT provider: initializing." << endl;
 
 	for (int k = 0; k < PIXEL_BLOCK_SIZE; ++k)
 		for (int n = 0; n < PIXEL_BLOCK_SIZE; ++n)
@@ -18,7 +18,7 @@ CDiscreteCosineTransform::CDiscreteCosineTransform(bool inverse, bool quantize, 
 
 	setQuantizationLevel(quantizationLevel);
 
-	std::cout << "DCT provider: initialized." << std::endl << std::endl;
+	cout << "DCT provider: initialized." << endl << endl;
 }
 
 void CDiscreteCosineTransform::setQuantization(bool quantize)
@@ -45,7 +45,7 @@ void CDiscreteCosineTransform::setQuantizationLevel(int quality)
 {
 	m_quantizationLevel = quality;
 	if (m_quantizationLevel < 0 || m_quantizationLevel > 100)
-		throw std::runtime_error("Discrete cosine transform quantization quality must be between 0 and 100%.");
+		throw runtime_error("Discrete cosine transform quantization quality must be between 0 and 100%.");
 
 	// Matrice de quantification (source: JPEG)
 	m_quantizationMatrix <<	16,  12,  14,  14,  18,  24,  49,  72,

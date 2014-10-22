@@ -86,7 +86,7 @@ void CCompressor::run() const
 	CRunLengthEncoder runLengthEncoder;
 	
 	// Pour chaque frame
-	for (int i = 0; rawVideoLoader.GetNextYCbCrFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame); ++i)
+	for (int i = 0; i == 0 || rawVideoLoader.GetNextYCbCrFrame(currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame); ++i)
 	{
 		cout << i << ": processing frame." << endl;
 
