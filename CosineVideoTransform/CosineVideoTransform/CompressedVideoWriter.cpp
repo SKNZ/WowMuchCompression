@@ -28,9 +28,12 @@ void CCompressedVideoWriter::Finalize()
 
 void CCompressedVideoWriter::SaveFrame(const CSerializableComponentFrame& YVideoFrame,
 	const CSerializableComponentFrame& CbVideoFrame,
-	const CSerializableComponentFrame& CrVideoFrame)
+	const CSerializableComponentFrame& CrVideoFrame,
+	const CComponentFrame& matchesYVideoFrame,
+	const CComponentFrame& matchesCbVideoFrame,
+	const CComponentFrame& matchesCrVideoFrame)
 {
-	// On écrit la taille de chaque frame après la RLE
+	// On écrit la taille de chaque frame après la RLE et le blockmatching
 	CSerializableComponentFrame::size_type size = YVideoFrame.size();
 	m_fileStream.write(reinterpret_cast<const char*>(&size), sizeof(CSerializableComponentFrame::size_type));
 
@@ -39,11 +42,87 @@ void CCompressedVideoWriter::SaveFrame(const CSerializableComponentFrame& YVideo
 
 	size = CrVideoFrame.size();
 	m_fileStream.write(reinterpret_cast<const char*>(&size), sizeof(CSerializableComponentFrame::size_type));
+	
+	uint16_t bufferSize = 0;
+	// On écrit les matchs
+	vector<uint8_t> buffer(1);
+	buffer[0] = 0;
+	int bitPosition = 0;
+	for (int k = 0; k < matchesYVideoFrame.rows(); ++k)
+	{
+		for (int n = 0; n < matchesYVideoFrame.cols(); ++n)
+		{
+			if (matchesYVideoFrame(k, n))
+				buffer[buffer.size() - 1] |= 1 << bitPosition;
+			++bitPosition;
+
+			if (bitPosition > 7)
+			{
+				buffer.push_back(0);
+				bitPosition = 0;
+			}
+		}
+	}
+	bufferSize = buffer.size();
+	m_fileStream.write(reinterpret_cast<const char*>(&bufferSize), sizeof(uint16_t));
+	if (bufferSize)
+		m_fileStream.write(reinterpret_cast<const char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
+
+	buffer.resize(1);
+	buffer[0] = 0;
+	bitPosition = 0;
+	for (int k = 0; k < matchesCbVideoFrame.rows(); ++k)
+	{
+		for (int n = 0; n < matchesCbVideoFrame.cols(); ++n)
+		{
+			if (matchesCbVideoFrame(k, n))
+				buffer[buffer.size() - 1] |= 1 << bitPosition;
+			++bitPosition;
+
+			if (bitPosition > 7)
+			{
+				buffer.push_back(0);
+				bitPosition = 0;
+			}
+		}
+	}
+	bufferSize = buffer.size();
+	m_fileStream.write(reinterpret_cast<const char*>(&bufferSize), sizeof(uint16_t));
+	if (bufferSize)
+		m_fileStream.write(reinterpret_cast<const char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
+
+	buffer.resize(1);
+	buffer[0] = 0;
+	bitPosition = 0;
+	for (int k = 0; k < matchesCrVideoFrame.rows(); ++k)
+	{
+		for (int n = 0; n < matchesCrVideoFrame.cols(); ++n)
+		{
+			if (matchesCrVideoFrame(k, n))
+				buffer[buffer.size() - 1] |= 1 << bitPosition;
+			++bitPosition;
+
+			if (bitPosition > 7)
+			{
+				buffer.push_back(0);
+				bitPosition = 0;
+			}
+		}
+	}
+	bufferSize = buffer.size();
+	m_fileStream.write(reinterpret_cast<const char*>(&bufferSize), sizeof(uint16_t));
+	if (bufferSize)
+		m_fileStream.write(reinterpret_cast<const char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
 
 	// On écrit la frame
-	m_fileStream.write(reinterpret_cast<const char*>(&YVideoFrame[0]), YVideoFrame.size() * sizeof(CSerializedComponentType));
-	m_fileStream.write(reinterpret_cast<const char*>(&CbVideoFrame[0]), CbVideoFrame.size() * sizeof(CSerializedComponentType));
-	m_fileStream.write(reinterpret_cast<const char*>(&CrVideoFrame[0]), CrVideoFrame.size() * sizeof(CSerializedComponentType));
+	if (YVideoFrame.size())
+		m_fileStream.write(reinterpret_cast<const char*>(&YVideoFrame[0]), YVideoFrame.size() * sizeof(CSerializedComponentType));
+
+	if (CbVideoFrame.size())
+		m_fileStream.write(reinterpret_cast<const char*>(&CbVideoFrame[0]), CbVideoFrame.size() * sizeof(CSerializedComponentType));
+
+	if (CrVideoFrame.size())
+		m_fileStream.write(reinterpret_cast<const char*>(&CrVideoFrame[0]), CrVideoFrame.size() * sizeof(CSerializedComponentType));
 
 	++m_frameCount;
 }

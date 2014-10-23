@@ -54,7 +54,7 @@
     <ClInclude Include="RunLengthEncoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MotionCompensator.h">
+    <ClInclude Include="BlockMatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -95,7 +95,7 @@
     <ClCompile Include="RunLengthEncoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MotionCompensator.cpp">
+    <ClCompile Include="BlockMatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

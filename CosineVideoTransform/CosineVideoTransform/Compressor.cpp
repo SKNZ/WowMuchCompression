@@ -27,7 +27,8 @@ void CCompressor::run() const
 	  * Il y a 3 composantes - Y, Cb & Cr. On déclare donc 3 CComponentFrame par image.
 	  *
 	  **/
-	CComponentFrame currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame;
+	CComponentFrame currentYVideoFrame, currentCbVideoFrame, currentCrVideoFrame,
+		prevYVideoFrame, prevCbVideoFrame, prevCrVideoFrame;
 
 	/**
 	  * La classe CSerializableComponentFrame représente les mêmes données que CComponentFrame
@@ -35,6 +36,8 @@ void CCompressor::run() const
 	  *
 	  **/
 	CSerializableComponentFrame serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame;
+	CComponentFrame matchesYVideoFrame, matchesCbVideoFrame, matchesCrVideoFrame,
+		prevMatchesYVideoFrame, prevMatchesCbVideoFrame, prevMatchesCrVideoFrame;
 
 	/**
 	  * Les frames (images) du fichier vidéo sont importées avec comme format de couleur RGB (Red Green Blue).
@@ -84,6 +87,8 @@ void CCompressor::run() const
 	  *
 	  **/
 	CRunLengthEncoder runLengthEncoder;
+
+	CBlockMatcher blockMatcher;
 	
 	// Pour chaque frame
 	int i = 0;
@@ -106,20 +111,61 @@ void CCompressor::run() const
 
 		cout << "Done." << endl << "\tApplying discrete cosine transform on Cr component... ";
 		dct(currentCrVideoFrame);
+		
+		if (i != 0) // first frame doesn't have previous frame
+		{
+			serializableYVideoFrame.resize(0);
+			serializableCbVideoFrame.resize(0);
+			serializableCrVideoFrame.resize(0);
+
+			blockMatcher(prevYVideoFrame, currentYVideoFrame, serializableYVideoFrame, matchesYVideoFrame, prevMatchesYVideoFrame);
+			blockMatcher(prevCbVideoFrame, currentCbVideoFrame, serializableCbVideoFrame, matchesCbVideoFrame, prevMatchesCbVideoFrame);
+			blockMatcher(prevCrVideoFrame, currentCrVideoFrame, serializableCrVideoFrame, matchesCrVideoFrame, prevMatchesCrVideoFrame);
+		}
+		else // handle first frame case
+		{
+			serializableYVideoFrame.resize(currentYVideoFrame.size());
+			serializableCbVideoFrame.resize(currentCbVideoFrame.size());
+			serializableCrVideoFrame.resize(currentCrVideoFrame.size());
+
+			matchesYVideoFrame.resize(currentYVideoFrame.rows() / 8, currentCbVideoFrame.cols() / 8);
+			matchesCbVideoFrame.resize(currentCbVideoFrame.rows() / 8, currentCbVideoFrame.cols() / 8);
+			matchesCrVideoFrame.resize(currentCrVideoFrame.rows() / 8, currentCrVideoFrame.cols() / 8);
+
+			for (int k = 0; k < currentYVideoFrame.rows(); ++k)
+				for (int n = 0; n < currentYVideoFrame.cols(); ++n)
+					serializableYVideoFrame.push_back(currentYVideoFrame(k, n));
+
+			for (int k = 0; k < currentCbVideoFrame.rows(); ++k)
+				for (int n = 0; n < currentCbVideoFrame.cols(); ++n)
+					serializableCbVideoFrame.push_back(currentCbVideoFrame(k, n));
+
+			for (int k = 0; k < currentCrVideoFrame.rows(); ++k)
+				for (int n = 0; n < currentCrVideoFrame.cols(); ++n)
+					serializableCrVideoFrame.push_back(currentCrVideoFrame(k, n));
+		}
 
 		cout << "Done." << endl << "\tRun length encoding on Y component... ";
-		runLengthEncoder(currentYVideoFrame, serializableYVideoFrame);
+		runLengthEncoder(serializableYVideoFrame);
 
 		cout << "Done." << endl << "\tRun length encoding on Cb component... ";
-		runLengthEncoder(currentCbVideoFrame, serializableCbVideoFrame);
+		runLengthEncoder(serializableCbVideoFrame);
 
 		cout << "Done." << endl << "\tRun length encoding on Cr component... ";
-		runLengthEncoder(currentCrVideoFrame, serializableCrVideoFrame);
+		runLengthEncoder(serializableCrVideoFrame);
 
 		cout << "Done." << endl << "\tSaving frame to file... ";
-		compressedVideoWriter.SaveFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame);
+		compressedVideoWriter.SaveFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame,
+			matchesYVideoFrame, matchesCbVideoFrame, matchesCrVideoFrame);
 		
 		cout << "Done." << endl;
+
+		prevYVideoFrame = currentYVideoFrame;
+		prevCbVideoFrame = currentCbVideoFrame;
+		prevCrVideoFrame = currentCrVideoFrame;
+		prevMatchesYVideoFrame = matchesYVideoFrame;
+		prevMatchesCbVideoFrame = matchesCbVideoFrame;
+		prevMatchesCrVideoFrame = matchesCrVideoFrame;
 
 		cout << endl;
 		++i;

@@ -16,6 +16,9 @@ CRawVideoLoader::CRawVideoLoader(const std::string& filePath) : m_filePath(fileP
 	m_width = int(m_videoFile.get(CV_CAP_PROP_FRAME_WIDTH)); 
 	m_height = int(m_videoFile.get(CV_CAP_PROP_FRAME_HEIGHT));
 
+	if (m_width > VIDEO_MAX_WIDTH || m_height > VIDEO_MAX_HEIGHT)
+		throw runtime_error("Max supported resolution is 1366x768.");
+
 	cout << "Video loader: file opened." << endl
 		<< "\tInput video width: " << m_width << endl
 		<< "\tInput video height: " << m_height << endl;

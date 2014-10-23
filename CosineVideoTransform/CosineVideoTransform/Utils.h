@@ -3,6 +3,11 @@
 #include "stdafx.h"
 
 #define PIXEL_BLOCK_SIZE 8
+#define VIDEO_MAX_WIDTH 1366
+#define VIDEO_MAX_HEIGHT 768 // block matching
+#define VIDEO_MAX_WIDTH_BLOCKCOUNT 171
+#define VIDEO_MAX_HEIGHT_BLOCKCOUNT 96
+
 
 namespace nsWMC
 {
@@ -20,9 +25,4 @@ namespace nsWMC
 	const double KSQRTOf2OnPixelBlockSize = sqrt(2. / PIXEL_BLOCK_SIZE);
 	const double KSQRTOf2 = sqrt(2.);
 
-	struct CTranslationVector
-	{
-		uint16_t kO, nO, kD, nD;
-	};
-	typedef std::vector<CTranslationVector> CTranslationVectors;
 }

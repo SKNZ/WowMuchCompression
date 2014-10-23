@@ -163,7 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChromaSubsampler.h" />
-    <ClInclude Include="MotionCompensator.h" />
+    <ClInclude Include="BlockMatcher.h" />
     <ClInclude Include="CompressedVideoReader.h" />
     <ClInclude Include="CompressedVideoWriter.h" />
     <ClInclude Include="Compressor.h" />
@@ -183,7 +183,7 @@
     <ClCompile Include="Compressor.cpp" />
     <ClCompile Include="DiscreteCosineTransform.cpp" />
     <ClCompile Include="Extractor.cpp" />
-    <ClCompile Include="MotionCompensator.cpp" />
+    <ClCompile Include="BlockMatcher.cpp" />
     <ClCompile Include="RawVideoExporter.cpp" />
     <ClCompile Include="RunLengthEncoder.cpp" />
     <ClCompile Include="WMC.cpp" />
