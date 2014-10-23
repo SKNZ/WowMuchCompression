@@ -35,7 +35,9 @@ void CExtractor::run() const
 
 	CRunLengthEncoder runLengthDecoder(true);
 
-	for (int i = 0; videoReader.ReadFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame); ++i)
+	int i = 0;
+
+	do
 	{
 		cout << i << ": processing frame." << endl;
 
@@ -73,5 +75,6 @@ void CExtractor::run() const
 		cout << "Done." << endl;
 
 		cout << endl;
-	}
+		++i;
+	} while (videoReader.ReadFrame(serializableYVideoFrame, serializableCbVideoFrame, serializableCrVideoFrame));
 }
