@@ -10,10 +10,7 @@ namespace nsWMC
 		CCompressedVideoWriter(const std::string& filePath, uint16_t width, uint16_t height, uint8_t widthPadding, uint8_t heightPadding);
 		void SaveFrame(const CSerializableComponentFrame& YVideoFrame,
 			const CSerializableComponentFrame& CbVideoFrame,
-			const CSerializableComponentFrame& CrVideoFrame,
-			const CComponentFrame& matchesYVideoFrame,
-			const CComponentFrame& matchesCbVideoFrame,
-			const CComponentFrame& matchesCrVideoFrame);
+			const CSerializableComponentFrame& CrVideoFrame);
 		void Finalize();
 
 	private:

@@ -21,7 +21,7 @@
 #include <string>
 #include <chrono>
 #include <ctime>
-#include <bitset>
+#include "intrin.h"
 
 #include "Utils.h"
 #include "RawVideoLoader.h"
@@ -33,6 +33,6 @@
 #include "RawVideoExporter.h"
 #include "ChromaSubsampler.h"
 #include "RunLengthEncoder.h"
-#include "BlockMatcher.h"
+#include "MotionCompensator.h"
 
 // TODO: reference additional headers your program requires here

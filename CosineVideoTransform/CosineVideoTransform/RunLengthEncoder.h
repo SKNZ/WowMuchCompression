@@ -8,7 +8,7 @@ namespace nsWMC
 	{
 	public:
 		CRunLengthEncoder(bool decode = false);
-		void operator()(CSerializableComponentFrame& serializedFrame);
+		void operator()(CComponentFrame& frame, CSerializableComponentFrame& serializedFrame);
 	
 	private:
 		bool m_decode;

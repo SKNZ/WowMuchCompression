@@ -21,10 +21,7 @@ CCompressedVideoReader::CCompressedVideoReader(const std::string& filePath)
 
 bool CCompressedVideoReader::ReadFrame(CSerializableComponentFrame& YVideoFrame,
 	CSerializableComponentFrame& CbVideoFrame,
-	CSerializableComponentFrame& CrVideoFrame,
-	CComponentFrame& matchesYVideoFrame,
-	CComponentFrame& matchesCbVideoFrame,
-	CComponentFrame& matchesCrVideoFrame)
+	CSerializableComponentFrame& CrVideoFrame)
 {
 	if (m_framesRead >= m_frameCount)
 		return false;
@@ -39,81 +36,9 @@ bool CCompressedVideoReader::ReadFrame(CSerializableComponentFrame& YVideoFrame,
 	m_fileStream.read(reinterpret_cast<char*>(&size), sizeof(CSerializableComponentFrame::size_type));
 	CrVideoFrame.resize(size);
 
-	uint16_t bufferSize;
-	vector<uint8_t> buffer;
-	m_fileStream.read(reinterpret_cast<char*>(&bufferSize), sizeof(uint16_t));
-	int position = 0;
-	int count = 0;
-	if (bufferSize)
-	{
-		buffer.resize(bufferSize);
-		m_fileStream.read(reinterpret_cast<char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
-		for (int k = 0; k < matchesYVideoFrame.rows(); ++k)
-		{
-			for (int n = 0; n < matchesYVideoFrame.cols(); ++n)
-			{
-				matchesYVideoFrame(k, n) = buffer[count] & (1 << position++);
-
-				if (position > 7)
-				{
-					count++;
-					position = 0;
-				}
-			}
-		}
-	}
-	m_fileStream.read(reinterpret_cast<char*>(&bufferSize), sizeof(uint16_t));
-	buffer.resize(bufferSize);
-	if (bufferSize)
-	{
-		m_fileStream.read(reinterpret_cast<char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
-		position = 0;
-		count = 0;
-		for (int k = 0; k < matchesCbVideoFrame.rows(); ++k)
-		{
-			for (int n = 0; n < matchesCbVideoFrame.cols(); ++n)
-			{
-				matchesCbVideoFrame(k, n) = buffer[count] & (1 << position++);
-
-				if (position > 7)
-				{
-					count++;
-					position = 0;
-				}
-			}
-		}
-	}
-
-	m_fileStream.read(reinterpret_cast<char*>(&bufferSize), sizeof(uint16_t));
-	buffer.resize(bufferSize);
-	if (bufferSize)
-	{
-		m_fileStream.read(reinterpret_cast<char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
-		position = 0;
-		count = 0;
-		for (int k = 0; k < matchesCrVideoFrame.rows(); ++k)
-		{
-			for (int n = 0; n < matchesCrVideoFrame.cols(); ++n)
-			{
-				matchesCrVideoFrame(k, n) = buffer[count] & (1 << position++);
-
-				if (position > 7)
-				{
-					count++;
-					position = 0;
-				}
-			}
-		}
-	}
-
-	if (YVideoFrame.size())
-		m_fileStream.read(reinterpret_cast<char*>(&YVideoFrame[0]), YVideoFrame.size() * sizeof(CSerializedComponentType));
-
-	if (CbVideoFrame.size())
-		m_fileStream.read(reinterpret_cast<char*>(&CbVideoFrame[0]), CbVideoFrame.size() * sizeof(CSerializedComponentType));
-
-	if (CrVideoFrame.size())
-		m_fileStream.read(reinterpret_cast<char*>(&CrVideoFrame[0]), CrVideoFrame.size() * sizeof(CSerializedComponentType));
+	m_fileStream.read(reinterpret_cast<char*>(&YVideoFrame[0]), YVideoFrame.size() * sizeof(CSerializedComponentType));
+	m_fileStream.read(reinterpret_cast<char*>(&CbVideoFrame[0]), CbVideoFrame.size() * sizeof(CSerializedComponentType));
+	m_fileStream.read(reinterpret_cast<char*>(&CrVideoFrame[0]), CrVideoFrame.size() * sizeof(CSerializedComponentType));
 	++m_framesRead;
 	return true;
 }

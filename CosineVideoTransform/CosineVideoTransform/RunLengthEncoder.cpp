@@ -9,11 +9,8 @@ CRunLengthEncoder::CRunLengthEncoder(bool decode)
 {
 }
 
-void CRunLengthEncoder::operator()(CSerializableComponentFrame& serializedFrame)
+void CRunLengthEncoder::operator()(CComponentFrame& frame, CSerializableComponentFrame& serializedFrame)
 {
-	if (!serializedFrame.size()) // frame vide car blockmatché à 100%
-		return;
-
 	if (!m_decode)
 	{
 		/** serializedFrame est un "buffer" de données, une zone de mémoire servant à stocker
@@ -21,11 +18,12 @@ void CRunLengthEncoder::operator()(CSerializableComponentFrame& serializedFrame)
 		  * On dimensionne le buffer de manière à ce qu'il puisse accueiller tous les composants
 		  * 
 		  **/
+		serializedFrame.resize(frame.rows() * frame.cols());
 
-		//// On copie les données de la frame dans le buffer serializedFrame
-		//// Le cast est transforme les composantes réelles en entiers moins couteux en stockage.
-		//Map<Matrix<CSerializedComponentType, Dynamic, Dynamic>>(serializedFrame.data(), frame.rows(), frame.cols()) = frame.cast<CSerializedComponentType>();
-		//
+		// On copie les données de la frame dans le buffer serializedFrame
+		// Le cast est transforme les composantes réelles en entiers moins couteux en stockage.
+		Map<Matrix<CSerializedComponentType, Dynamic, Dynamic>>(serializedFrame.data(), frame.rows(), frame.cols()) = frame.cast<CSerializedComponentType>();
+		
 		// On déclare un deuxième buffer, cette fois-ci pour les données après compression
 		CSerializableComponentFrame rleFrame;
 
@@ -66,8 +64,8 @@ void CRunLengthEncoder::operator()(CSerializableComponentFrame& serializedFrame)
 			}
 		}
 		rleFrame.push_back(serializedFrame[serializedFrame.size() - 1]); // Le dernier élément est traité séparément.
-		serializedFrame = rleFrame;
-		//// On recopie dans notre frame le contenu du buffer
-		//frame = Matrix<int16_t, Dynamic, Dynamic>::Map(rleFrame.data(), frame.rows(), frame.cols()).cast<CComponentType>();
+
+		// On recopie dans notre frame le contenu du buffer
+		frame = Matrix<int16_t, Dynamic, Dynamic>::Map(rleFrame.data(), frame.rows(), frame.cols()).cast<CComponentType>();
 	}
 }
