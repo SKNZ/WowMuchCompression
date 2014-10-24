@@ -1,8 +1,0 @@
-F:\Development\ModMath\DiscreteCosineTransform\bin\Debug\DiscreteCosineTransform.exe
-F:\Development\ModMath\DiscreteCosineTransform\bin\Debug\DiscreteCosineTransform.pdb
-F:\Development\ModMath\DiscreteCosineTransform\obj\Debug\DiscreteCosineTransform.csprojResolveAssemblyReference.cache
-F:\Development\ModMath\DiscreteCosineTransform\obj\Debug\DiscreteCosineTransform.MainFrm.resources
-F:\Development\ModMath\DiscreteCosineTransform\obj\Debug\DiscreteCosineTransform.Properties.Resources.resources
-F:\Development\ModMath\DiscreteCosineTransform\obj\Debug\DiscreteCosineTransform.csproj.GenerateResource.Cache
-F:\Development\ModMath\DiscreteCosineTransform\obj\Debug\DiscreteCosineTransform.exe
-F:\Development\ModMath\DiscreteCosineTransform\obj\Debug\DiscreteCosineTransform.pdb
